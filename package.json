@@ -1,0 +1,19 @@
+{
+  "name": "sustenta-habilidade-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Monorepo do II Sustenta & Habilidade — Next.js (site) e Payload CMS (inscrições).",
+  "scripts": {
+    "dev": "npx concurrently -n web,cms -c cyan,green \"npm run dev --prefix apps/web\" \"npm run dev --prefix apps/cms\"",
+    "dev:web": "npm run dev --prefix apps/web",
+    "dev:cms": "npm run dev --prefix apps/cms",
+    "build": "npm run build --prefix apps/cms && npm run build --prefix apps/web",
+    "generate:types": "npm run generate:types --prefix apps/cms"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
