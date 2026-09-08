@@ -2,6 +2,7 @@ import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
+import nodemailer from 'nodemailer'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -47,7 +48,7 @@ export default buildConfig({
     defaultFromAddress: env('EMAIL_USER') || 'noreply@localhost',
     defaultFromName: 'II Sustenta & Habilidade',
     skipVerify: true,
-    transportOptions: {
+    transport: nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
       secure: true,
@@ -55,7 +56,7 @@ export default buildConfig({
         user: env('EMAIL_USER'),
         pass: env('EMAIL_PASS'),
       },
-    },
+    }),
   }),
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

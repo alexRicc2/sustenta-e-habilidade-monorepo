@@ -10,8 +10,8 @@ export type InscricaoInput = {
   instituicao?: string
   ra?: string
   isUnesp?: boolean | string
-  categoria: string
-  metodoPagamento: 'pix' | 'cartao'
+  categoria: Inscricoe['categoria']
+  metodoPagamento: Inscricoe['metodoPagamento']
   valorCentavos: number
   comprovanteId?: string
   stripeSessionId?: string
