@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --forest: #1c4a33;
+  --forest-deep: #123326;
+  --olive: #a0bf47;
+  --leaf: #3f8f4e;
+  --mint: #e7f4e2;
+  --sky: #6eb4d4;
+  --flask: #1e4f8c;
+  --cream: #f6faf3;
+  --ink: #15261c;
+  --paper: #ffffff;
+}
+
+@theme inline {
+  --color-forest: var(--forest);
+  --color-forest-deep: var(--forest-deep);
+  --color-olive: var(--olive);
+  --color-leaf: var(--leaf);
+  --color-mint: var(--mint);
+  --color-sky: var(--sky);
+  --color-flask: var(--flask);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-fraunces);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-nunito), sans-serif;
+}
+
+.hex-grid {
+  background-color: #eef6ea;
+  background-image: url("/patterns/chemistry.svg");
+  background-repeat: repeat;
+  background-size: 240px 180px;
+}
+
+.polaroid {
+  background: white;
+  padding: 10px 10px 28px;
+  box-shadow: 0 12px 30px rgba(18, 51, 38, 0.18);
+}
+
+.input-line {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  color: white;
+  padding: 8px 0 10px;
+  outline: none;
+}
+
+.input-line:focus {
+  border-bottom-color: #b8e08a;
+}
+
+.marker-highlight {
+  background-image: url("/patterns/marker-brush.svg");
+  background-repeat: no-repeat;
+  background-position: left 58%;
+  background-size: 0% 118%;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  margin: 0 -0.18em;
+  padding: 0.06em 0.18em;
+  transition: background-size 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.marker-highlight.is-visible {
+  background-size: 100% 118%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker-highlight {
+    transition: none;
+  }
+}
