@@ -23,7 +23,7 @@ export function StripeEmbed({
       const stripe = await loadStripe(publishableKey)
       if (!stripe || cancelled) return
 
-      const checkout = await stripe.initEmbeddedCheckout({
+      const checkout = await stripe.createEmbeddedCheckoutPage({
         clientSecret,
         onComplete,
       })

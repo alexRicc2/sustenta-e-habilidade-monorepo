@@ -41,12 +41,8 @@ export async function POST(request: Request) {
 
   try {
     let comprovanteId: string | undefined
-    if (comprovante && typeof comprovante !== "string" && comprovante.size > 0) {
-      const file =
-        comprovante instanceof File
-          ? comprovante
-          : new File([comprovante], "comprovante", { type: comprovante.type || "image/jpeg" })
-      comprovanteId = await uploadComprovante(file, nomeCompleto)
+    if (comprovante instanceof File && comprovante.size > 0) {
+      comprovanteId = await uploadComprovante(comprovante, nomeCompleto)
     }
 
     const response = await fetch(`${PAYLOAD_URL}/api/submit-inscricao`, {

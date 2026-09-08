@@ -8,7 +8,7 @@ const darkSectionIds = new Set(["programacao"]);
 
 function currentSectionId() {
   const activationLine = window.innerHeight * 0.32;
-  let current = navItems[0].id;
+  let current: (typeof navItems)[number]["id"] = navItems[0].id;
   for (const item of navItems) {
     const section = document.getElementById(item.id);
     if (section && section.getBoundingClientRect().top <= activationLine) {
