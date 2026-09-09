@@ -5,6 +5,8 @@ export const event = {
   tagline: 'Ações e Inovações em Química na Busca dos ODS',
   datesLabel: '05 e 06 de outubro de 2026',
   datesShort: '05 e 06 DE OUTUBRO DE 2026',
+  startsAt: '2026-10-05T07:30:00-03:00',
+  endsAt: '2026-10-06T18:00:00-03:00',
   location: 'Auditório A',
   campus: 'UNESP/IBILCE — São José do Rio Preto/SP',
   address: 'Rua Cristóvão Colombo, 2265, Jardim Nazareth, CEP 15054-000',
@@ -95,29 +97,37 @@ export const ticketTypes = [
     id: 'graduacao-unesp',
     title: 'Graduação UNESP',
     description: 'Estudantes de graduação da UNESP.',
-    priceCents: 3000,
-  },
-  {
-    id: 'graduacao-outra',
-    title: 'Graduação outras IES',
-    description: 'Estudantes de graduação de outras instituições.',
-    priceCents: 4000,
+    priceCents: 5000,
   },
   {
     id: 'pos',
     title: 'Pós-graduação',
     description: 'Mestrado, doutorado e pós-doutorado.',
-    priceCents: 5000,
+    priceCents: 6000,
   },
   {
-    id: 'profissional',
-    title: 'Docente / profissional',
-    description: 'Docentes, pesquisadores e profissionais da área.',
-    priceCents: 8000,
+    id: 'permanencia-estudantil',
+    title: 'Permanência estudantil',
+    description: 'Estudantes da permanência estudantil. É necessário anexar um comprovante.',
+    priceCents: 4000,
+  },
+  {
+    id: 'publico-externo',
+    title: 'Público externo',
+    description: 'Estudantes de outras instituições, docentes, pesquisadores e demais participantes.',
+    priceCents: 6500,
   },
 ] as const
 
 export type TicketTypeId = (typeof ticketTypes)[number]['id']
+
+export function ticketRequiresProof(categoria: string) {
+  return categoria === 'permanencia-estudantil'
+}
+
+export function requiresManualApproval(categoria: string, metodoPagamento: 'pix' | 'cartao') {
+  return metodoPagamento === 'pix' || ticketRequiresProof(categoria)
+}
 
 export type SessionKind =
   | 'logistica'
@@ -368,6 +378,37 @@ export const schedule: Session[] = [
   },
 ]
 
+export const instagram = {
+  handle: 'sustenta_e_habilidade',
+  url: 'https://www.instagram.com/sustenta_e_habilidade/',
+  posts: [
+    {
+      src: '/instagram/01-organizadores.jpg',
+      alt: 'Conheça os organizadores do II Sustenta & Habilidade',
+    },
+    {
+      src: '/instagram/02-save-the-date.webp',
+      alt: 'Save the date: 05 e 06 de outubro de 2026 no Auditório A do IBILCE/UNESP',
+    },
+    {
+      src: '/instagram/03-ultima-edicao.jpg',
+      alt: 'Participantes da última edição do Sustenta & Habilidade',
+    },
+    {
+      src: '/instagram/04-primeiro-dia.jpg',
+      alt: 'Banner do Sustenta & Habilidade no campus do IBILCE',
+    },
+    {
+      src: '/instagram/05-aviso.jpg',
+      alt: 'Aviso: início do evento no Auditório A do IBILCE',
+    },
+    {
+      src: '/instagram/06-patrocinadores.jpg',
+      alt: 'Patrocinadores e parceiros do Sustenta & Habilidade',
+    },
+  ],
+} as const
+
 export const navItems = [
   { id: 'inicio', label: 'Início' },
   { id: 'sobre', label: 'Sobre' },
@@ -375,4 +416,5 @@ export const navItems = [
   { id: 'programacao', label: 'Programação' },
   { id: 'patrocinadores', label: 'Patrocinadores' },
   { id: 'organizacao', label: 'Organização' },
+  { id: 'instagram', label: 'Instagram' },
 ] as const

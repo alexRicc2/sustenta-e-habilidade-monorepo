@@ -3,14 +3,17 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import type { Payload } from 'payload'
 import type { Inscricoe } from '@/payload-types'
+import { formatQrNumero, qrcodeFromInscricao, qrPngBuffer } from '@/lib/qrcode'
 
-export type EmailKind = 'pix-recebido' | 'confirmacao'
+export type EmailKind = 'aguardando-aprovacao' | 'confirmacao'
 
 const categoriaLabels: Record<Inscricoe['categoria'], string> = {
   'graduacao-unesp': 'Graduação UNESP',
   'graduacao-outra': 'Graduação outras IES',
   pos: 'Pós-graduação',
   profissional: 'Docente / profissional',
+  'permanencia-estudantil': 'Permanência estudantil',
+  'publico-externo': 'Público externo',
 }
 
 function env(name: string) {
@@ -50,21 +53,31 @@ async function getLogoAttachment() {
   }
 }
 
-function buildEmail(kind: EmailKind, inscricao: Inscricoe, hasLogo: boolean) {
+function buildEmail(
+  kind: EmailKind,
+  inscricao: Inscricoe,
+  hasLogo: boolean,
+  qr?: { numero: number; codigo: string } | null,
+) {
   const nome = firstName(inscricao.nomeCompleto)
   const categoria = categoriaLabels[inscricao.categoria] || inscricao.categoria
   const valor = formatBRL(inscricao.valorCentavos)
   const metodo = inscricao.metodoPagamento === 'pix' ? 'Pix' : 'Cartão de crédito'
+  const qrNumero = qr ? formatQrNumero(qr.numero) : null
 
-  const isPixPending = kind === 'pix-recebido'
-  const title = isPixPending ? 'Recebemos sua inscrição' : 'Inscrição confirmada'
-  const subject = isPixPending
+  const isPending = kind === 'aguardando-aprovacao'
+  const title = isPending ? 'Recebemos sua inscrição' : 'Inscrição confirmada'
+  const subject = isPending
     ? 'Recebemos sua inscrição — II Sustenta & Habilidade'
     : 'Inscrição confirmada — II Sustenta & Habilidade'
-  const headline = isPixPending ? `Obrigado, ${nome}!` : `Inscrição confirmada, ${nome}!`
-  const body = isPixPending
-    ? 'Recebemos o comprovante Pix da sua inscrição no <strong>II Sustenta &amp; Habilidade</strong>. Nossa equipe está analisando o comprovante e, em breve, a inscrição será validada. Você receberá um novo e-mail quando tudo estiver confirmado.'
-    : 'Sua inscrição no <strong>II Sustenta &amp; Habilidade</strong> está confirmada. Pagamento validado e vaga garantida — esperamos você nos dias <strong>05 e 06 de outubro de 2026</strong>.'
+  const headline = isPending ? `Obrigado, ${nome}!` : `Inscrição confirmada, ${nome}!`
+  const pendingBody =
+    inscricao.categoria === 'permanencia-estudantil'
+      ? 'Recebemos sua inscrição no <strong>II Sustenta &amp; Habilidade</strong> e o comprovante de permanência estudantil. Nossa equipe vai analisar os documentos e, em breve, a inscrição será validada. Você receberá um novo e-mail quando tudo estiver confirmado.'
+      : 'Recebemos o comprovante Pix da sua inscrição no <strong>II Sustenta &amp; Habilidade</strong>. Nossa equipe está analisando o comprovante e, em breve, a inscrição será validada. Você receberá um novo e-mail quando tudo estiver confirmado.'
+  const body = isPending
+    ? pendingBody
+    : 'Sua inscrição no <strong>II Sustenta &amp; Habilidade</strong> está confirmada. Pagamento validado e vaga garantida — esperamos você nos dias <strong>05 e 06 de outubro de 2026</strong>. Guarde o QR Code abaixo e apresente-o na entrada do evento.'
 
   const logoBlock = hasLogo
     ? `<img src="cid:logo@sustenta" alt="Sustenta &amp; Habilidade" width="180" style="display:block;margin:0 auto;max-width:180px;height:auto;border:0;" />`
@@ -103,9 +116,24 @@ function buildEmail(kind: EmailKind, inscricao: Inscricoe, hasLogo: boolean) {
                       <p style="margin:0 0 6px;font-size:14px;"><strong>Categoria:</strong> ${escapeHtml(categoria)}</p>
                       <p style="margin:0 0 6px;font-size:14px;"><strong>Valor:</strong> ${valor}</p>
                       <p style="margin:0;font-size:14px;"><strong>Pagamento:</strong> ${metodo}</p>
+                      ${qrNumero ? `<p style="margin:8px 0 0;font-size:14px;"><strong>QR Code:</strong> ${qrNumero}</p>` : ''}
                     </td>
                   </tr>
                 </table>
+                ${
+                  qr
+                    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
+                  <tr>
+                    <td align="center" style="padding:18px 12px;background:#f6faf3;border-radius:16px;">
+                      <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#6f8238;font-weight:800;">Seu QR Code de participação</p>
+                      <img src="cid:qrcode@sustenta" alt="QR Code ${qrNumero}" width="220" height="220" style="display:block;margin:0 auto;background:#ffffff;border-radius:12px;border:0;" />
+                      <p style="margin:12px 0 0;font-size:20px;font-weight:800;color:#1c4a33;">${qrNumero}</p>
+                      <p style="margin:8px 0 0;font-size:13px;line-height:1.5;color:#15261c;">Apresente este código na entrada. Ele também corresponde ao crachá impresso ${qrNumero}.</p>
+                    </td>
+                  </tr>
+                </table>`
+                    : ''
+                }
                 <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#15261c;">
                   Auditório A, UNESP/IBILCE — São José do Rio Preto/SP<br />
                   Rua Cristóvão Colombo, 2265, Jardim Nazareth
@@ -125,9 +153,13 @@ function buildEmail(kind: EmailKind, inscricao: Inscricoe, hasLogo: boolean) {
   </body>
 </html>`.trim()
 
-  const text = isPixPending
-    ? `Obrigado, ${nome}!\n\nRecebemos o comprovante Pix da sua inscrição no II Sustenta & Habilidade. Nossa equipe está analisando o comprovante e, em breve, a inscrição será validada.\n\nCategoria: ${categoria}\nValor: ${valor}\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
-    : `Inscrição confirmada, ${nome}!\n\nSua inscrição no II Sustenta & Habilidade está confirmada. Pagamento validado e vaga garantida.\n\nCategoria: ${categoria}\nValor: ${valor}\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
+  const pendingText =
+    inscricao.categoria === 'permanencia-estudantil'
+      ? `Obrigado, ${nome}!\n\nRecebemos sua inscrição no II Sustenta & Habilidade e o comprovante de permanência estudantil. Nossa equipe vai analisar os documentos e, em breve, a inscrição será validada.`
+      : `Obrigado, ${nome}!\n\nRecebemos o comprovante Pix da sua inscrição no II Sustenta & Habilidade. Nossa equipe está analisando o comprovante e, em breve, a inscrição será validada.`
+  const text = isPending
+    ? `${pendingText}\n\nCategoria: ${categoria}\nValor: ${valor}\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
+    : `Inscrição confirmada, ${nome}!\n\nSua inscrição no II Sustenta & Habilidade está confirmada. Pagamento validado e vaga garantida.\n\nCategoria: ${categoria}\nValor: ${valor}${qrNumero ? `\nQR Code: ${qrNumero}` : ''}\n\nApresente o QR Code deste e-mail na entrada do evento.\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
 
   return { subject, html, text }
 }
@@ -142,14 +174,27 @@ function escapeHtml(value: string) {
 
 export async function sendInscricaoEmail(payload: Payload, inscricao: Inscricoe, kind: EmailKind) {
   const logo = await getLogoAttachment()
-  const { subject, html, text } = buildEmail(kind, inscricao, Boolean(logo))
+  const qr = kind === 'confirmacao' ? qrcodeFromInscricao(inscricao) : null
+  const { subject, html, text } = buildEmail(kind, inscricao, Boolean(logo), qr)
+  const attachments: Array<{ filename: string; cid: string; path?: string; content?: Buffer }> = logo
+    ? [logo]
+    : []
+
+  if (qr) {
+    const content = await qrPngBuffer(qr.codigo)
+    attachments.push({
+      filename: `qrcode-${formatQrNumero(qr.numero)}.png`,
+      content,
+      cid: 'qrcode@sustenta',
+    })
+  }
 
   await payload.sendEmail({
     to: inscricao.email,
     subject,
     text,
     html,
-    attachments: logo ? [logo] : [],
+    attachments,
   })
 }
 

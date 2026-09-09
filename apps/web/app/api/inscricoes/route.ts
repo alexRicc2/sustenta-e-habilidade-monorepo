@@ -1,32 +1,8 @@
 import { NextResponse } from "next/server"
-import { ticketTypes } from "@/lib/event"
+import { ticketRequiresProof, ticketTypes } from "@/lib/event"
+import { uploadPayloadMedia } from "@/lib/payload-media"
 
 const PAYLOAD_URL = process.env.PAYLOAD_URL || "http://localhost:3001"
-
-async function uploadComprovante(file: File, nomeCompleto: string) {
-  const mediaForm = new FormData()
-  mediaForm.append("file", file, file.name)
-  mediaForm.append(
-    "_payload",
-    JSON.stringify({
-      alt: `Comprovante PIX — ${nomeCompleto}`,
-    }),
-  )
-
-  const response = await fetch(`${PAYLOAD_URL}/api/media`, {
-    method: "POST",
-    body: mediaForm,
-  })
-  const data = await response.json()
-  if (!response.ok) {
-    throw new Error(data?.errors?.[0]?.message || data?.message || "Falha ao enviar o comprovante para o R2.")
-  }
-  const id = data.doc?.id || data.id
-  if (!id) {
-    throw new Error("Upload do comprovante não retornou um ID.")
-  }
-  return String(id)
-}
 
 export async function POST(request: Request) {
   const formData = await request.formData()
@@ -34,15 +10,28 @@ export async function POST(request: Request) {
   const ticket = ticketTypes.find((item) => item.id === categoria)
   const nomeCompleto = String(formData.get("nomeCompleto") || "")
   const comprovante = formData.get("comprovante")
+  const comprovantePermanencia = formData.get("comprovantePermanencia")
 
   if (!ticket) {
     return NextResponse.json({ error: "Selecione um ingresso válido." }, { status: 400 })
   }
 
+  if (ticketRequiresProof(ticket.id) && !(comprovantePermanencia instanceof File && comprovantePermanencia.size > 0)) {
+    return NextResponse.json({ error: "Anexe o comprovante de permanência estudantil." }, { status: 400 })
+  }
+
   try {
     let comprovanteId: string | undefined
     if (comprovante instanceof File && comprovante.size > 0) {
-      comprovanteId = await uploadComprovante(comprovante, nomeCompleto)
+      comprovanteId = await uploadPayloadMedia(comprovante, `Comprovante PIX — ${nomeCompleto}`)
+    }
+
+    let comprovantePermanenciaId: string | undefined
+    if (comprovantePermanencia instanceof File && comprovantePermanencia.size > 0) {
+      comprovantePermanenciaId = await uploadPayloadMedia(
+        comprovantePermanencia,
+        `Comprovante permanência estudantil — ${nomeCompleto}`,
+      )
     }
 
     const response = await fetch(`${PAYLOAD_URL}/api/submit-inscricao`, {
@@ -53,13 +42,13 @@ export async function POST(request: Request) {
         email: String(formData.get("email") || ""),
         cpf: String(formData.get("cpf") || ""),
         telefone: String(formData.get("telefone") || ""),
-        instituicao: String(formData.get("instituicao") || ""),
         ra: String(formData.get("ra") || ""),
         isUnesp: String(formData.get("isUnesp")) === "true",
         categoria: ticket.id,
         valorCentavos: ticket.priceCents,
         metodoPagamento: "pix",
         comprovanteId,
+        comprovantePermanenciaId,
       }),
     })
 
@@ -70,7 +59,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: message }, { status: response.status })
     }
 
-    return NextResponse.json({ ok: true, id: data.doc?.id, comprovanteId })
+    return NextResponse.json({ ok: true, id: data.doc?.id, comprovanteId, comprovantePermanenciaId })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erro ao enviar inscrição." },

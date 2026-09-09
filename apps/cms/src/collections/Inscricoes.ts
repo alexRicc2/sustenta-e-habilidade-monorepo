@@ -1,5 +1,34 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { enviarConfirmacaoEndpoint } from '@/endpoints/inscricoes'
+import { assignQrToInscricaoData, relationId, releaseQrcode } from '@/lib/qrcode'
+import type { Inscricoe } from '@/payload-types'
+
+const syncQrcodeOnChange: CollectionBeforeChangeHook = async ({
+  data,
+  originalDoc,
+  req,
+  operation,
+  context,
+}) => {
+  if (context?.skipQrHooks) return data
+
+  const nextStatus = data.statusPagamento ?? originalDoc?.statusPagamento
+  const currentQr = data.qrcode !== undefined ? data.qrcode : originalDoc?.qrcode
+
+  if (nextStatus === 'pago' && operation !== 'create' && originalDoc?.id) {
+    data.qrcode = await assignQrToInscricaoData(req.payload, String(originalDoc.id), currentQr, req)
+  }
+
+  if (nextStatus === 'cancelado') {
+    const qrId = relationId(currentQr)
+    if (qrId && originalDoc?.id) {
+      await releaseQrcode(req.payload, qrId, String(originalDoc.id), req)
+    }
+    data.qrcode = null
+  }
+
+  return data
+}
 
 export const Inscricoes: CollectionConfig = {
   slug: 'inscricoes',
@@ -9,10 +38,52 @@ export const Inscricoes: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'nomeCompleto',
-    defaultColumns: ['nomeCompleto', 'email', 'categoria', 'metodoPagamento', 'statusPagamento', 'createdAt'],
+    defaultColumns: [
+      'nomeCompleto',
+      'email',
+      'categoria',
+      'metodoPagamento',
+      'statusPagamento',
+      'qrcode',
+      'createdAt',
+    ],
     group: 'Evento',
   },
   endpoints: [enviarConfirmacaoEndpoint],
+  hooks: {
+    beforeChange: [syncQrcodeOnChange],
+    afterChange: [
+      async ({ doc, req, operation, context }) => {
+        if (context?.skipQrHooks) return doc
+        if (operation === 'create' && doc.statusPagamento === 'pago' && !doc.qrcode) {
+          const qrId = await assignQrToInscricaoData(req.payload, doc.id, null, req)
+          return req.payload.update({
+            collection: 'inscricoes',
+            id: doc.id,
+            data: { qrcode: qrId },
+            overrideAccess: true,
+            context: { skipQrHooks: true },
+            req,
+          })
+        }
+        return doc
+      },
+    ],
+    beforeDelete: [
+      async ({ id, req }) => {
+        const doc = (await req.payload.findByID({
+          collection: 'inscricoes',
+          id: String(id),
+          overrideAccess: true,
+          req,
+        })) as Inscricoe
+        const qrId = relationId(doc.qrcode)
+        if (qrId) {
+          await releaseQrcode(req.payload, qrId, String(id), req)
+        }
+      },
+    ],
+  },
   access: {
     create: () => true,
     read: ({ req: { user } }) => Boolean(user),
@@ -36,7 +107,6 @@ export const Inscricoes: CollectionConfig = {
       name: 'cpf',
       type: 'text',
       required: true,
-      unique: true,
       index: true,
       label: 'CPF',
     },
@@ -69,9 +139,11 @@ export const Inscricoes: CollectionConfig = {
       label: 'Categoria do ingresso',
       options: [
         { label: 'Graduação UNESP', value: 'graduacao-unesp' },
-        { label: 'Graduação outras IES', value: 'graduacao-outra' },
         { label: 'Pós-graduação', value: 'pos' },
-        { label: 'Docente / profissional', value: 'profissional' },
+        { label: 'Permanência estudantil', value: 'permanencia-estudantil' },
+        { label: 'Público externo', value: 'publico-externo' },
+        { label: 'Graduação outras IES (legado)', value: 'graduacao-outra' },
+        { label: 'Docente / profissional (legado)', value: 'profissional' },
       ],
     },
     {
@@ -101,6 +173,16 @@ export const Inscricoes: CollectionConfig = {
       displayPreview: true,
       admin: {
         condition: (_, siblingData) => siblingData?.metodoPagamento === 'pix',
+      },
+    },
+    {
+      name: 'comprovantePermanencia',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Comprovante de permanência estudantil',
+      displayPreview: true,
+      admin: {
+        condition: (_, siblingData) => siblingData?.categoria === 'permanencia-estudantil',
       },
     },
     {
@@ -136,6 +218,17 @@ export const Inscricoes: CollectionConfig = {
       ],
     },
     {
+      name: 'qrcode',
+      type: 'relationship',
+      relationTo: 'qrcodes',
+      label: 'QR Code',
+      admin: {
+        readOnly: true,
+        description:
+          'Atribuído automaticamente na confirmação. Volta ao pool se a inscrição for cancelada.',
+      },
+    },
+    {
       name: 'emailConfirmacaoEnviado',
       type: 'checkbox',
       defaultValue: false,
@@ -149,11 +242,12 @@ export const Inscricoes: CollectionConfig = {
     {
       name: 'enviarEmailConfirmacao',
       type: 'ui',
-      label: 'Confirmação Pix',
+      label: 'Aprovar inscrição',
       admin: {
         position: 'sidebar',
         disableListColumn: true,
-        condition: (data) => data?.metodoPagamento === 'pix',
+        condition: (data) =>
+          data?.metodoPagamento === 'pix' || data?.categoria === 'permanencia-estudantil',
         components: {
           Field: '/components/SendConfirmationEmail#SendConfirmationEmail',
         },

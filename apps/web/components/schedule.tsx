@@ -53,7 +53,7 @@ export function Schedule() {
               key={item.id}
               type="button"
               onClick={() => setDay(item.id)}
-              className={`rounded-full px-5 py-2 text-sm font-extrabold uppercase tracking-widest ${
+              className={`cursor-pointer rounded-full px-5 py-2 text-sm font-extrabold uppercase tracking-widest ${
                 day === item.id ? "bg-olive text-white" : "bg-white/10 hover:bg-white/20"
               }`}
             >
@@ -63,7 +63,7 @@ export function Schedule() {
           <button
             type="button"
             onClick={() => setDay("todos")}
-            className={`rounded-full px-5 py-2 text-sm font-extrabold uppercase tracking-widest ${
+            className={`cursor-pointer rounded-full px-5 py-2 text-sm font-extrabold uppercase tracking-widest ${
               day === "todos" ? "bg-olive text-white" : "bg-white/10 hover:bg-white/20"
             }`}
           >
@@ -77,7 +77,7 @@ export function Schedule() {
               key={item}
               type="button"
               onClick={() => setKind(item)}
-              className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest ${
+              className={`cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest ${
                 kind === item ? "bg-sky text-forest-deep" : "border border-white/20 hover:bg-white/10"
               }`}
             >

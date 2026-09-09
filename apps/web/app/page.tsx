@@ -5,6 +5,7 @@ import { Ods } from "@/components/ods";
 import { Schedule } from "@/components/schedule";
 import { Sponsors } from "@/components/sponsors";
 import { Organizers } from "@/components/organizers";
+import { Instagram } from "@/components/instagram";
 import { Footer } from "@/components/footer";
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
       <Schedule />
       <Sponsors />
       <Organizers />
+      <Instagram />
       <Footer />
     </>
   );

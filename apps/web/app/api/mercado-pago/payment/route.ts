@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
-import { ticketTypes } from "@/lib/event"
+import { ticketRequiresProof, ticketTypes } from "@/lib/event"
 import { cardTotalCents, centsToAmount } from "@/lib/money"
+import { uploadPayloadMedia } from "@/lib/payload-media"
 
 const PAYLOAD_URL = process.env.PAYLOAD_URL || "http://localhost:3001"
 
@@ -23,7 +24,6 @@ type Body = {
   email?: string
   cpf?: string
   telefone?: string
-  instituicao?: string
   ra?: string
   isUnesp?: boolean
   categoria?: string
@@ -70,6 +70,42 @@ async function confirmPayment(mercadoPagoPaymentId: string) {
   })
 }
 
+async function parsePaymentRequest(request: Request): Promise<{
+  body: Body
+  comprovantePermanencia: File | null
+}> {
+  const contentType = request.headers.get("content-type") || ""
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData()
+    const cardRaw = String(formData.get("cardFormData") || "{}")
+    let cardFormData: CardFormData | undefined
+    try {
+      cardFormData = JSON.parse(cardRaw) as CardFormData
+    } catch {
+      cardFormData = undefined
+    }
+    const file = formData.get("comprovantePermanencia")
+    return {
+      body: {
+        nomeCompleto: String(formData.get("nomeCompleto") || ""),
+        email: String(formData.get("email") || ""),
+        cpf: String(formData.get("cpf") || ""),
+        telefone: String(formData.get("telefone") || ""),
+        ra: String(formData.get("ra") || ""),
+        isUnesp: String(formData.get("isUnesp")) === "true",
+        categoria: String(formData.get("categoria") || ""),
+        cardFormData,
+      },
+      comprovantePermanencia: file instanceof File && file.size > 0 ? file : null,
+    }
+  }
+
+  return {
+    body: (await request.json()) as Body,
+    comprovantePermanencia: null,
+  }
+}
+
 export async function POST(request: Request) {
   const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN
   if (!accessToken) {
@@ -79,7 +115,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const body = (await request.json()) as Body
+  const { body, comprovantePermanencia } = await parsePaymentRequest(request)
   const ticket = ticketTypes.find((item) => item.id === body.categoria)
   const formData = body.cardFormData
 
@@ -87,8 +123,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 400 })
   }
 
+  if (ticketRequiresProof(ticket.id) && !comprovantePermanencia) {
+    return NextResponse.json({ error: "Anexe o comprovante de permanência estudantil." }, { status: 400 })
+  }
+
   if (!formData?.token || !formData.payment_method_id || !formData.installments) {
     return NextResponse.json({ error: "Dados do cartão incompletos." }, { status: 400 })
+  }
+
+  let comprovantePermanenciaId: string | undefined
+  if (comprovantePermanencia) {
+    comprovantePermanenciaId = await uploadPayloadMedia(
+      comprovantePermanencia,
+      `Comprovante permanência estudantil — ${body.nomeCompleto}`,
+    )
   }
 
   const amountCents = cardTotalCents(ticket.priceCents)
@@ -168,13 +216,13 @@ export async function POST(request: Request) {
       email: body.email,
       cpf: onlyDigits(body.cpf),
       telefone: onlyDigits(body.telefone),
-      instituicao: body.instituicao || "",
       ra: body.ra || "",
       isUnesp: Boolean(body.isUnesp),
       categoria: ticket.id,
       valorCentavos: amountCents,
       metodoPagamento: "cartao",
       mercadoPagoPaymentId: String(payment.id),
+      comprovantePermanenciaId,
     }),
   })
 

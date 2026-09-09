@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     inscricoes: Inscricoe;
+    qrcodes: Qrcode;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +81,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     inscricoes: InscricoesSelect<false> | InscricoesSelect<true>;
+    qrcodes: QrcodesSelect<false> | QrcodesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -187,20 +189,50 @@ export interface Inscricoe {
   instituicao?: string | null;
   ra?: string | null;
   isUnesp?: boolean | null;
-  categoria: 'graduacao-unesp' | 'graduacao-outra' | 'pos' | 'profissional';
+  categoria:
+    'graduacao-unesp' | 'pos' | 'permanencia-estudantil' | 'publico-externo' | 'graduacao-outra' | 'profissional';
   /**
    * Valor cobrado em centavos de real.
    */
   valorCentavos: number;
   metodoPagamento: 'pix' | 'cartao';
   comprovante?: (string | null) | Media;
+  comprovantePermanencia?: (string | null) | Media;
   stripeSessionId?: string | null;
   mercadoPagoPaymentId?: string | null;
   statusPagamento: 'pendente' | 'pago' | 'cancelado';
   /**
+   * Atribuído automaticamente na confirmação. Volta ao pool se a inscrição for cancelada.
+   */
+  qrcode?: (string | null) | Qrcode;
+  /**
    * Marcado automaticamente após o e-mail de inscrição confirmada.
    */
   emailConfirmacaoEnviado?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Pool fixo de 150 QR Codes. Baixe um por um na lista, todos em ZIP, ou abra a folha de impressão. O status muda para Atribuído quando a inscrição é confirmada e volta a Disponível se for cancelada.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "qrcodes".
+ */
+export interface Qrcode {
+  id: string;
+  /**
+   * Número impresso no crachá (001 a 150).
+   */
+  numero: number;
+  /**
+   * Valor gravado no QR Code. Não altere depois da impressão.
+   */
+  codigo: string;
+  status: 'disponivel' | 'atribuido';
+  /**
+   * Inscrição confirmada que está usando este QR Code.
+   */
+  inscricao?: (string | null) | Inscricoe;
   updatedAt: string;
   createdAt: string;
 }
@@ -239,6 +271,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'inscricoes';
         value: string | Inscricoe;
+      } | null)
+    | ({
+        relationTo: 'qrcodes';
+        value: string | Qrcode;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -353,10 +389,24 @@ export interface InscricoesSelect<T extends boolean = true> {
   valorCentavos?: T;
   metodoPagamento?: T;
   comprovante?: T;
+  comprovantePermanencia?: T;
   stripeSessionId?: T;
   mercadoPagoPaymentId?: T;
   statusPagamento?: T;
+  qrcode?: T;
   emailConfirmacaoEnviado?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "qrcodes_select".
+ */
+export interface QrcodesSelect<T extends boolean = true> {
+  numero?: T;
+  codigo?: T;
+  status?: T;
+  inscricao?: T;
   updatedAt?: T;
   createdAt?: T;
 }

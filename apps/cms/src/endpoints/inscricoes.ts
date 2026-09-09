@@ -1,5 +1,7 @@
 import { addDataAndFileToRequest, APIError, type Endpoint, type Payload, type PayloadRequest } from 'payload'
 import type { Inscricoe } from '@/payload-types'
+import { needsManualApproval } from '@/lib/inscricao'
+import { getInscricaoWithQr } from '@/lib/qrcode'
 import { sendInscricaoEmail, sendInscricaoEmailSafe } from '@/lib/mail'
 
 export type InscricaoInput = {
@@ -14,6 +16,7 @@ export type InscricaoInput = {
   metodoPagamento: Inscricoe['metodoPagamento']
   valorCentavos: number
   comprovanteId?: string
+  comprovantePermanenciaId?: string
   stripeSessionId?: string
   mercadoPagoPaymentId?: string
 }
@@ -25,43 +28,30 @@ async function readJsonBody(req: PayloadRequest) {
   return (req.data || {}) as InscricaoInput
 }
 
-async function upsertInscricao(payload: Payload, data: InscricaoInput) {
-  const existing = await payload.find({
-    collection: 'inscricoes',
-    where: { cpf: { equals: data.cpf } },
-    limit: 1,
-    overrideAccess: true,
-  })
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '')
+}
 
-  const docData = {
-    nomeCompleto: data.nomeCompleto,
-    email: data.email,
-    cpf: data.cpf,
-    telefone: data.telefone,
-    instituicao: data.instituicao || '',
-    ra: data.ra || '',
-    isUnesp: data.isUnesp === true || data.isUnesp === 'true',
-    categoria: data.categoria,
-    metodoPagamento: data.metodoPagamento,
-    valorCentavos: Number(data.valorCentavos),
-    statusPagamento: 'pendente' as const,
-    ...(data.comprovanteId ? { comprovante: data.comprovanteId } : {}),
-    ...(data.stripeSessionId ? { stripeSessionId: data.stripeSessionId } : {}),
-    ...(data.mercadoPagoPaymentId ? { mercadoPagoPaymentId: data.mercadoPagoPaymentId } : {}),
-  }
-
-  if (existing.docs[0]) {
-    return payload.update({
-      collection: 'inscricoes',
-      id: existing.docs[0].id,
-      data: docData,
-      overrideAccess: true,
-    })
-  }
-
+async function createInscricao(payload: Payload, data: InscricaoInput) {
   return payload.create({
     collection: 'inscricoes',
-    data: docData,
+    data: {
+      nomeCompleto: data.nomeCompleto,
+      email: data.email,
+      cpf: onlyDigits(data.cpf),
+      telefone: onlyDigits(data.telefone) || data.telefone,
+      instituicao: data.instituicao || '',
+      ra: data.ra || '',
+      isUnesp: data.isUnesp === true || data.isUnesp === 'true',
+      categoria: data.categoria,
+      metodoPagamento: data.metodoPagamento,
+      valorCentavos: Number(data.valorCentavos),
+      statusPagamento: 'pendente',
+      ...(data.comprovanteId ? { comprovante: data.comprovanteId } : {}),
+      ...(data.comprovantePermanenciaId ? { comprovantePermanencia: data.comprovantePermanenciaId } : {}),
+      ...(data.stripeSessionId ? { stripeSessionId: data.stripeSessionId } : {}),
+      ...(data.mercadoPagoPaymentId ? { mercadoPagoPaymentId: data.mercadoPagoPaymentId } : {}),
+    },
     overrideAccess: true,
   })
 }
@@ -88,25 +78,26 @@ export const submitInscricaoEndpoint: Endpoint = {
 
     const comprovanteId =
       data.comprovanteId || (data as InscricaoInput & { comprovante?: string }).comprovante
+    const comprovantePermanenciaId =
+      data.comprovantePermanenciaId ||
+      (data as InscricaoInput & { comprovantePermanencia?: string }).comprovantePermanencia
 
     if (data.metodoPagamento === 'pix' && !comprovanteId) {
       throw new APIError('Anexe o comprovante de pagamento PIX.', 400)
     }
 
-    const doc = (await upsertInscricao(req.payload, { ...data, comprovanteId })) as Inscricoe
+    if (data.categoria === 'permanencia-estudantil' && !comprovantePermanenciaId) {
+      throw new APIError('Anexe o comprovante de permanência estudantil.', 400)
+    }
 
-    if (data.metodoPagamento === 'pix') {
-      await sendInscricaoEmailSafe(req.payload, doc, 'pix-recebido')
-    } else if (data.mercadoPagoPaymentId) {
-      const sent = await sendInscricaoEmailSafe(req.payload, doc, 'confirmacao')
-      if (sent) {
-        await req.payload.update({
-          collection: 'inscricoes',
-          id: doc.id,
-          data: { emailConfirmacaoEnviado: true },
-          overrideAccess: true,
-        })
-      }
+    const doc = (await createInscricao(req.payload, {
+      ...data,
+      comprovanteId,
+      comprovantePermanenciaId,
+    })) as Inscricoe
+
+    if (needsManualApproval(data.categoria, data.metodoPagamento)) {
+      await sendInscricaoEmailSafe(req.payload, doc, 'aguardando-aprovacao')
     }
 
     return Response.json({ ok: true, doc })
@@ -139,25 +130,38 @@ export const confirmarPagamentoEndpoint: Endpoint = {
     if (!found.docs[0]) throw new APIError('Inscrição não encontrada', 404)
 
     const existing = found.docs[0] as Inscricoe
-    const shouldSendCardEmail =
-      existing.metodoPagamento === 'cartao' && !existing.emailConfirmacaoEnviado
 
-    let sent = false
-    if (shouldSendCardEmail) {
-      sent = await sendInscricaoEmailSafe(req.payload, existing, 'confirmacao')
+    if (needsManualApproval(existing.categoria, existing.metodoPagamento)) {
+      return Response.json({ ok: true, doc: existing, awaitingApproval: true })
     }
 
-    const doc = await req.payload.update({
+    await req.payload.update({
       collection: 'inscricoes',
       id: existing.id,
-      data: {
-        statusPagamento: 'pago',
-        ...(sent ? { emailConfirmacaoEnviado: true } : {}),
-      },
+      data: { statusPagamento: 'pago' },
       overrideAccess: true,
     })
 
-    return Response.json({ ok: true, doc })
+    const shouldSendCardEmail =
+      existing.metodoPagamento === 'cartao' && !existing.emailConfirmacaoEnviado
+    const withQr = await getInscricaoWithQr(req.payload, existing.id, req)
+
+    let sent = false
+    if (shouldSendCardEmail) {
+      sent = await sendInscricaoEmailSafe(req.payload, withQr, 'confirmacao')
+    }
+
+    if (sent) {
+      await req.payload.update({
+        collection: 'inscricoes',
+        id: existing.id,
+        data: { emailConfirmacaoEnviado: true },
+        overrideAccess: true,
+        context: { skipQrHooks: true },
+      })
+    }
+
+    return Response.json({ ok: true, doc: withQr })
   },
 }
 
@@ -178,22 +182,31 @@ export const enviarConfirmacaoEndpoint: Endpoint = {
       overrideAccess: true,
     })) as Inscricoe
 
-    if (inscricao.metodoPagamento !== 'pix') {
-      throw new APIError('O e-mail de confirmação manual é apenas para pagamentos Pix.', 400)
+    if (!needsManualApproval(inscricao.categoria, inscricao.metodoPagamento)) {
+      throw new APIError(
+        'A aprovação manual é apenas para Pix ou permanência estudantil.',
+        400,
+      )
     }
 
-    await sendInscricaoEmail(req.payload, inscricao, 'confirmacao')
-
-    const doc = await req.payload.update({
+    await req.payload.update({
       collection: 'inscricoes',
       id,
-      data: {
-        statusPagamento: 'pago',
-        emailConfirmacaoEnviado: true,
-      },
+      data: { statusPagamento: 'pago' },
       overrideAccess: true,
     })
 
-    return Response.json({ ok: true, doc })
+    const withQr = await getInscricaoWithQr(req.payload, id, req)
+    await sendInscricaoEmail(req.payload, withQr, 'confirmacao')
+
+    await req.payload.update({
+      collection: 'inscricoes',
+      id,
+      data: { emailConfirmacaoEnviado: true },
+      overrideAccess: true,
+      context: { skipQrHooks: true },
+    })
+
+    return Response.json({ ok: true, doc: withQr })
   },
 }

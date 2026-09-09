@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useCallback, useMemo, useState } from "react"
-import { pix, ticketTypes, type TicketTypeId } from "@/lib/event"
+import { pix, ticketRequiresProof, ticketTypes, type TicketTypeId } from "@/lib/event"
 import { CARD_FEE_RATE, cardTotalCents, centsToAmount, formatBRL } from "@/lib/money"
 import type { MercadoPagoCardFormData } from "@/components/mercado-pago-embed"
 
@@ -21,7 +21,6 @@ type FormState = {
   email: string
   cpf: string
   telefone: string
-  instituicao: string
   ra: string
   isUnesp: boolean
   categoria: TicketTypeId | ""
@@ -34,7 +33,6 @@ const initialState: FormState = {
   email: "",
   cpf: "",
   telefone: "",
-  instituicao: "",
   ra: "",
   isUnesp: false,
   categoria: "",
@@ -62,11 +60,48 @@ function maskPhone(value: string) {
   return digits.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2")
 }
 
+function FileDrop({
+  label,
+  hint,
+  file,
+  onFile,
+}: {
+  label: string
+  hint?: string
+  file: File | null
+  onFile: (file: File | null) => void
+}) {
+  return (
+    <label
+      className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/30 p-6 text-center"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault()
+        const dropped = event.dataTransfer.files?.[0]
+        if (dropped) onFile(dropped)
+      }}
+    >
+      <p className="font-extrabold">{label}</p>
+      <p className="mt-2 text-sm text-white/70">
+        {file ? file.name : "Clique ou arraste o arquivo aqui. JPG, PNG ou PDF."}
+      </p>
+      {hint ? <p className="mt-3 text-xs text-white/50">{hint}</p> : null}
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        className="hidden"
+        onChange={(event) => onFile(event.target.files?.[0] || null)}
+      />
+    </label>
+  )
+}
+
 export function InscriptionForm() {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<FormState>(initialState)
   const [method, setMethod] = useState<PaymentMethod>("pix")
   const [comprovante, setComprovante] = useState<File | null>(null)
+  const [comprovantePermanencia, setComprovantePermanencia] = useState<File | null>(null)
   const [copied, setCopied] = useState(false)
   const [cardPaid, setCardPaid] = useState(false)
   const [cardStatus, setCardStatus] = useState<"approved" | "pending">("approved")
@@ -75,6 +110,8 @@ export function InscriptionForm() {
   const [success, setSuccess] = useState(false)
 
   const ticket = ticketTypes.find((item) => item.id === form.categoria)
+  const needsProof = Boolean(ticket && ticketRequiresProof(ticket.id))
+  const waitingApproval = method === "pix" || needsProof
   const baseCents = ticket?.priceCents ?? 0
   const cardCents = cardTotalCents(baseCents)
   const chargeCents = method === "cartao" ? cardCents : baseCents
@@ -89,10 +126,14 @@ export function InscriptionForm() {
         onlyDigits(form.telefone).length >= 10
       )
     }
-    if (step === 1) return Boolean(form.categoria)
+    if (step === 1) {
+      if (!form.categoria) return false
+      if (ticketRequiresProof(form.categoria) && !comprovantePermanencia) return false
+      return true
+    }
     if (method === "pix") return Boolean(comprovante)
     return cardPaid
-  }, [form, step, method, comprovante, cardPaid])
+  }, [form, step, method, comprovante, comprovantePermanencia, cardPaid])
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -107,15 +148,21 @@ export function InscriptionForm() {
   const onCardSubmit = useCallback(
     async (cardFormData: MercadoPagoCardFormData) => {
       setError("")
+      const payload = new FormData()
+      payload.set("nomeCompleto", form.nomeCompleto)
+      payload.set("email", form.email)
+      payload.set("cpf", onlyDigits(form.cpf))
+      payload.set("telefone", onlyDigits(form.telefone))
+      payload.set("ra", form.ra)
+      payload.set("isUnesp", form.isUnesp ? "true" : "false")
+      payload.set("categoria", form.categoria)
+      payload.set("cardFormData", JSON.stringify(cardFormData))
+      if (comprovantePermanencia) {
+        payload.set("comprovantePermanencia", comprovantePermanencia)
+      }
       const response = await fetch("/api/mercado-pago/payment", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          cpf: onlyDigits(form.cpf),
-          telefone: onlyDigits(form.telefone),
-          cardFormData,
-        }),
+        body: payload,
       })
       const data = (await response.json()) as {
         error?: string
@@ -130,11 +177,12 @@ export function InscriptionForm() {
       setError(data.error || "Não foi possível concluir o pagamento.")
       return Promise.reject()
     },
-    [form],
+    [form, comprovantePermanencia],
   )
 
   async function submitPix() {
     if (!ticket || !comprovante) return
+    if (ticketRequiresProof(ticket.id) && !comprovantePermanencia) return
     setSubmitting(true)
     setError("")
     try {
@@ -143,11 +191,13 @@ export function InscriptionForm() {
       payload.set("email", form.email)
       payload.set("cpf", onlyDigits(form.cpf))
       payload.set("telefone", onlyDigits(form.telefone))
-      payload.set("instituicao", form.instituicao)
       payload.set("ra", form.ra)
       payload.set("isUnesp", form.isUnesp ? "true" : "false")
       payload.set("categoria", ticket.id)
       payload.set("comprovante", comprovante)
+      if (comprovantePermanencia) {
+        payload.set("comprovantePermanencia", comprovantePermanencia)
+      }
       const response = await fetch("/api/inscricoes", { method: "POST", body: payload })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Não foi possível enviar a inscrição.")
@@ -160,17 +210,25 @@ export function InscriptionForm() {
   }
 
   if (success) {
+    const successCopy = waitingApproval
+      ? needsProof && method === "pix"
+        ? "Recebemos seu comprovante PIX e o comprovante de permanência estudantil. A organização vai analisar os documentos e confirmar para"
+        : needsProof
+          ? "Recebemos o pagamento e o comprovante de permanência estudantil. A organização vai analisar os documentos e confirmar para"
+          : "Recebemos seu comprovante PIX. A organização vai conferir o pagamento e confirmar para"
+      : cardStatus === "approved"
+        ? "Pagamento com cartão confirmado. Enviaremos os detalhes para"
+        : "Recebemos seu pagamento. Assim que o Mercado Pago confirmar, enviaremos os detalhes para"
+
     return (
       <div className="rounded-[28px] bg-forest p-8 text-center text-white md:p-12">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-sky">Inscrição recebida</p>
         <h2 className="mt-4 font-display text-3xl">Obrigado, {form.nomeCompleto.split(" ")[0]}!</h2>
         <p className="mt-4 text-white/80">
-          {method === "cartao"
-            ? cardStatus === "approved"
-              ? "Pagamento com cartão confirmado. Enviaremos os detalhes para"
-              : "Recebemos seu pagamento. Assim que o Mercado Pago confirmar, enviaremos os detalhes para"
-            : "Recebemos seu comprovante PIX. A organização vai conferir o pagamento e confirmar para"}{" "}
-          <strong>{form.email}</strong>.
+          {successCopy} <strong>{form.email}</strong>.
+        </p>
+        <p className="mt-4 text-sm text-white/70">
+          Se o e-mail não aparecer na caixa de entrada, verifique também a pasta de spam ou lixo eletrônico.
         </p>
       </div>
     )
@@ -265,20 +323,12 @@ export function InscriptionForm() {
                 />
               </label>
             </div>
-            <label className="block text-sm font-semibold text-white/80">
-              Instituição
-              <input
-                className="input-line mt-1"
-                value={form.instituicao}
-                onChange={(event) => update("instituicao", event.target.value)}
-              />
-            </label>
-            <label className="flex items-center gap-3 text-sm font-semibold">
+            <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold">
               <input
                 type="checkbox"
                 checked={form.isUnesp}
                 onChange={(event) => update("isUnesp", event.target.checked)}
-                className="h-4 w-4 accent-olive"
+                className="h-4 w-4 cursor-pointer accent-olive"
               />
               Sou da UNESP
             </label>
@@ -294,8 +344,9 @@ export function InscriptionForm() {
                 onClick={() => {
                   update("categoria", item.id)
                   setCardPaid(false)
+                  if (!ticketRequiresProof(item.id)) setComprovantePermanencia(null)
                 }}
-                className={`rounded-2xl border p-5 text-left transition ${
+                className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
                   form.categoria === item.id ? "border-sky bg-white/10" : "border-white/15 hover:border-white/40"
                 }`}
               >
@@ -308,6 +359,14 @@ export function InscriptionForm() {
                 </div>
               </button>
             ))}
+            {needsProof ? (
+              <FileDrop
+                label="Comprovante de permanência estudantil"
+                hint="Documento que comprove o vínculo com a permanência estudantil."
+                file={comprovantePermanencia}
+                onFile={setComprovantePermanencia}
+              />
+            ) : null}
           </div>
         ) : null}
 
@@ -332,6 +391,13 @@ export function InscriptionForm() {
               </div>
             </div>
 
+            {needsProof ? (
+              <p className="rounded-2xl bg-white/8 p-4 text-sm text-white/80">
+                Esta categoria fica pendente de aprovação da organização, mesmo no pagamento com cartão.
+                {comprovantePermanencia ? ` Comprovante anexado: ${comprovantePermanencia.name}.` : ""}
+              </p>
+            ) : null}
+
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -339,7 +405,7 @@ export function InscriptionForm() {
                   setMethod("pix")
                   setError("")
                 }}
-                className={`rounded-2xl py-3 text-sm font-extrabold uppercase tracking-widest ${
+                className={`cursor-pointer rounded-2xl py-3 text-sm font-extrabold uppercase tracking-widest ${
                   method === "pix" ? "bg-olive" : "bg-white/10"
                 }`}
               >
@@ -351,7 +417,7 @@ export function InscriptionForm() {
                   setMethod("cartao")
                   setError("")
                 }}
-                className={`rounded-2xl py-3 text-sm font-extrabold uppercase tracking-widest ${
+                className={`cursor-pointer rounded-2xl py-3 text-sm font-extrabold uppercase tracking-widest ${
                   method === "cartao" ? "bg-olive" : "bg-white/10"
                 }`}
               >
@@ -368,34 +434,17 @@ export function InscriptionForm() {
                   <button
                     type="button"
                     onClick={() => void copyPix()}
-                    className="mt-3 w-full rounded-full bg-forest px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-white"
+                    className="mt-3 w-full cursor-pointer rounded-full bg-forest px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-white"
                   >
                     {copied ? "Copiado" : "Copiar chave Pix"}
                   </button>
                 </div>
-                <label
-                  className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/30 p-6 text-center"
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault()
-                    const file = event.dataTransfer.files?.[0]
-                    if (file) setComprovante(file)
-                  }}
-                >
-                  <p className="font-extrabold">Comprovante de pagamento</p>
-                  <p className="mt-2 text-sm text-white/70">
-                    {comprovante
-                      ? comprovante.name
-                      : "Clique ou arraste o comprovante aqui. JPG, PNG ou PDF."}
-                  </p>
-                  <p className="mt-3 text-xs text-white/50">Pague o valor exato de {formatBRL(baseCents)} e anexe o comprovante.</p>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    className="hidden"
-                    onChange={(event) => setComprovante(event.target.files?.[0] || null)}
-                  />
-                </label>
+                <FileDrop
+                  label="Comprovante de pagamento"
+                  hint={`Pague o valor exato de ${formatBRL(baseCents)} e anexe o comprovante.`}
+                  file={comprovante}
+                  onFile={setComprovante}
+                />
               </div>
             ) : (
               <MercadoPagoEmbed
@@ -417,7 +466,7 @@ export function InscriptionForm() {
             <button
               type="button"
               onClick={() => setStep((current) => current - 1)}
-              className="rounded-2xl border border-white/20 px-5 py-4 font-extrabold uppercase tracking-widest"
+              className="cursor-pointer rounded-2xl border border-white/20 px-5 py-4 font-extrabold uppercase tracking-widest"
             >
               Voltar
             </button>
@@ -427,7 +476,7 @@ export function InscriptionForm() {
               type="button"
               disabled={!canNext}
               onClick={() => setStep((current) => current + 1)}
-              className="flex-1 rounded-2xl bg-olive py-4 font-extrabold uppercase tracking-[0.18em] disabled:opacity-40"
+              className="flex-1 cursor-pointer rounded-2xl bg-olive py-4 font-extrabold uppercase tracking-[0.18em] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Próxima etapa
             </button>
@@ -436,7 +485,7 @@ export function InscriptionForm() {
               type="button"
               disabled={!canNext || submitting}
               onClick={() => void submitPix()}
-              className="flex-1 rounded-2xl bg-olive py-4 font-extrabold uppercase tracking-[0.18em] disabled:opacity-40"
+              className="flex-1 cursor-pointer rounded-2xl bg-olive py-4 font-extrabold uppercase tracking-[0.18em] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitting ? "Enviando..." : "Finalizar inscrição"}
             </button>

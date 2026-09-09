@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { event, publicSrc } from "@/lib/event";
 import { EventTagline } from "./ods-link";
-import { MarkerHighlight } from "./marker-highlight";
+import { Countdown } from "./countdown";
 import { Wave } from "./wave";
 
 const polaroids = [
@@ -53,11 +53,12 @@ export function Hero() {
               className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-mint md:text-base"
               odsClassName="text-sky underline decoration-sky/80 decoration-2 underline-offset-4 transition hover:text-white"
             />
+            <p className="mt-6 text-sm font-extrabold uppercase tracking-[0.22em] text-mint md:text-base">
+              {event.datesShort} · {event.location}
+            </p>
+            <p className="mt-2 text-sm font-semibold text-white/85">{event.campus}</p>
+            <Countdown />
           </div>
-          <p className="mt-8 max-w-xl text-sm font-bold uppercase tracking-[0.22em] text-forest-deep md:text-base">
-            {event.datesShort} · {event.location}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-forest/80">{event.campus}</p>
         </div>
       </div>
       <Wave className="relative z-10 -mb-px" fill="#f6faf3" />
