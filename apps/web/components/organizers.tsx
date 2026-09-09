@@ -1,12 +1,15 @@
 import Image from "next/image";
 import { event, organizers, publicSrc } from "@/lib/event";
+import { MarkerHighlight } from "./marker-highlight";
 
 export function Organizers() {
   return (
     <section id="organizacao" className="bg-mint px-4 py-20 md:px-8">
       <div className="mx-auto max-w-6xl">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-olive">Quem faz o evento</p>
-        <h2 className="mt-3 font-display text-4xl text-forest md:text-5xl">Organização</h2>
+        <h2 className="mt-3 font-display text-4xl text-forest md:text-5xl">
+          <MarkerHighlight>Organização</MarkerHighlight>
+        </h2>
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           <article className="rounded-3xl bg-forest p-7 text-white">
             <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-sky">Coordenação</p>

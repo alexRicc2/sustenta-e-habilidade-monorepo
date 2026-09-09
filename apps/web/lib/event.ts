@@ -78,7 +78,7 @@ export const sponsorTiers = [
     sponsors: [{ name: 'OxiTEM', src: '/patrocinadores/prata/Logo oxitem.jpeg' }],
   },
   {
-    name: 'Bronze',
+    name: 'Colaboradores',
     sponsors: [
       { name: 'Arco Íris', src: '/patrocinadores/bronze/arco-iris.jpg' },
       { name: 'IBILCE', src: '/patrocinadores/bronze/ibilce.jpeg' },

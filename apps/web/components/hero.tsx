@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { event, publicSrc } from "@/lib/event";
 import { EventTagline } from "./ods-link";
+import { MarkerHighlight } from "./marker-highlight";
 import { Wave } from "./wave";
 
 const polaroids = [
@@ -14,7 +15,7 @@ export function Hero() {
   return (
     <section id="inicio" className="relative overflow-hidden bg-forest-deep">
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-forest-deep [clip-path:ellipse(70%_100%_at_50%_0%)] md:h-24" />
-      <div className="hex-grid relative min-h-[92vh]">
+      <div className="hex-grid relative min-h-[80vh] md:min-h-[92vh]">
         <div className="absolute inset-0 bg-forest-deep/25" />
         {polaroids.map((card) => (
           <div
@@ -40,7 +41,7 @@ export function Hero() {
           </div>
         ))}
 
-        <div className="relative z-10 mx-auto flex min-h-[92vh] max-w-5xl flex-col items-center justify-center px-4 py-28 text-center">
+        <div className="relative z-10 mx-auto flex  min-h-[70vh] md:min-h-[92vh] max-w-5xl flex-col items-center justify-center px-4 py-28 text-center">
           <div className="w-full rounded-sm bg-forest px-6 py-8 text-white shadow-[0_20px_50px_rgba(0,0,0,0.28)] md:px-14 md:py-10">
             <p className="text-sm font-extrabold tracking-[0.35em] text-sky">
               {event.edition} EDIÇÃO · {event.year}

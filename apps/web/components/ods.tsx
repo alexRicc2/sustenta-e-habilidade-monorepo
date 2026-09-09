@@ -1,51 +1,16 @@
-"use client";
-
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
 import { odsCopy, publicSrc } from "@/lib/event";
+import { MarkerHighlight } from "./marker-highlight";
 
 const goalAccents = ["bg-[#e5243b]", "bg-[#dd1367]", "bg-[#3f7e44]"];
 
 export function Ods() {
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const [highlighted, setHighlighted] = useState(false);
-
-  useEffect(() => {
-    const heading = headingRef.current;
-    if (!heading) return;
-
-    const reveal = () => setHighlighted(true);
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      reveal();
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          reveal();
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.55 },
-    );
-
-    observer.observe(heading);
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <section id="ods" className="scroll-mt-8 bg-mint px-4 py-20 md:px-8">
       <div className="mx-auto max-w-6xl">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-olive">Agenda 2030</p>
-        <h2
-          ref={headingRef}
-          className="mt-3 max-w-4xl font-display text-3xl leading-tight text-forest md:text-5xl"
-        >
-          Os{" "}
-          <span className={`marker-highlight ${highlighted ? "is-visible" : ""}`}>
-            Objetivos de Desenvolvimento Sustentável
-          </span>
+        <h2 className="mt-3 max-w-4xl font-display text-3xl leading-tight text-forest md:text-5xl">
+          Os <MarkerHighlight>Objetivos de Desenvolvimento Sustentável</MarkerHighlight>
         </h2>
         <div className="mt-10 grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div>

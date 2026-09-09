@@ -178,29 +178,40 @@ export function InscriptionForm() {
 
   return (
     <div className="overflow-hidden rounded-[28px] bg-forest text-white shadow-2xl">
-      <div className="grid grid-cols-2 text-center text-sm font-extrabold uppercase tracking-[0.18em]">
-        <div className="bg-olive py-4">Inscrever-se</div>
-        <div className="bg-forest-deep/40 py-4 text-white/40">Entrar</div>
+      <div className="bg-olive py-4 text-center text-sm font-extrabold uppercase tracking-[0.18em]">
+        Inscrever-se
       </div>
 
-      <div className="px-6 py-8 md:px-10">
+      <div className="px-4 py-8 sm:px-6 md:px-10">
         <p className="text-center font-display text-3xl">II Sustenta &amp; Habilidade</p>
         <p className="mt-1 text-center text-xs font-bold uppercase tracking-[0.22em] text-mint">
           05 e 06 de outubro de 2026
         </p>
 
-        <ol className="mt-8 flex items-center justify-between gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/50 md:text-xs">
+        <ol className="mt-8 grid grid-cols-3 text-center text-[10px] font-extrabold uppercase tracking-[0.08em] text-white/50 sm:tracking-[0.14em] md:text-xs">
           {steps.map((label, index) => (
-            <li key={label} className="flex flex-1 items-center gap-2">
+            <li key={label} className="relative flex min-w-0 flex-col items-center gap-2 px-1">
+              {index < steps.length - 1 ? (
+                <span
+                  aria-hidden
+                  className={`pointer-events-none absolute top-3.5 left-[calc(50%+16px)] right-[calc(-50%+16px)] h-px ${
+                    index < step ? "bg-olive/80" : "bg-white/20"
+                  }`}
+                />
+              ) : null}
               <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full border ${
-                  index === step ? "border-sky text-sky" : index < step ? "border-olive text-olive" : "border-white/30"
+                aria-current={index === step ? "step" : undefined}
+                className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
+                  index === step
+                    ? "border-sky bg-white text-forest"
+                    : index < step
+                      ? "border-olive text-olive"
+                      : "border-white/30"
                 }`}
               >
                 {index < step ? "✓" : index + 1}
               </span>
-              <span className={index === step ? "text-sky" : ""}>{label}</span>
-              {index < steps.length - 1 ? <span className="h-px flex-1 bg-white/20" /> : null}
+              <span className={`leading-tight ${index === step ? "text-sky" : ""}`}>{label}</span>
             </li>
           ))}
         </ol>

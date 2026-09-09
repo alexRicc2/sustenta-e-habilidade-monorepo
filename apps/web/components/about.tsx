@@ -1,4 +1,5 @@
 import { aboutCopy, event } from "@/lib/event";
+import { MarkerHighlight } from "./marker-highlight";
 
 const cards = [
   { title: "Quem somos", body: aboutCopy.quemSomos },
@@ -12,7 +13,7 @@ export function About() {
       <div className="mx-auto max-w-6xl">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-olive">Sobre o evento</p>
         <h2 className="mt-3 max-w-3xl font-display text-3xl text-forest md:text-5xl">
-          Ciência, sustentabilidade e formação em um só encontro.
+          <MarkerHighlight>Ciência, sustentabilidade e formação</MarkerHighlight> em um só encontro.
         </h2>
         <p className="mt-6 max-w-3xl text-lg leading-8 text-ink/80">{aboutCopy.intro}</p>
         <div className="mt-12 grid gap-6 md:grid-cols-3">

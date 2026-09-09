@@ -1,12 +1,15 @@
 import Image from "next/image";
 import { publicSrc, sponsorTiers } from "@/lib/event";
+import { MarkerHighlight } from "./marker-highlight";
 
 export function Sponsors() {
   return (
     <section id="patrocinadores" className="bg-cream px-4 py-20 md:px-8">
       <div className="mx-auto max-w-6xl">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-olive">Parcerias</p>
-        <h2 className="mt-3 font-display text-4xl text-forest md:text-5xl">Patrocinadores</h2>
+        <h2 className="mt-3 font-display text-4xl text-forest md:text-5xl">
+          <MarkerHighlight>Patrocinadores</MarkerHighlight>
+        </h2>
         <p className="mt-4 max-w-2xl text-lg text-ink/75">
           O evento é feito por estudantes e pesquisadores. Empresas e instituições que queiram apoiar a
           Química Verde e a formação acadêmica são bem-vindas.

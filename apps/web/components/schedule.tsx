@@ -8,6 +8,7 @@ import {
   type DayId,
   type SessionKind,
 } from "@/lib/event";
+import { MarkerHighlight } from "./marker-highlight";
 
 const kindFilters: (SessionKind | "todos")[] = [
   "todos",
@@ -42,7 +43,9 @@ export function Schedule() {
     <section id="programacao" className="bg-forest px-4 py-20 text-white md:px-8">
       <div className="mx-auto max-w-6xl">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-sky">Agenda</p>
-        <h2 className="mt-3 font-display text-4xl md:text-6xl">{heading}</h2>
+        <h2 className="mt-3 font-display text-4xl md:text-6xl">
+          <MarkerHighlight>{heading}</MarkerHighlight>
+        </h2>
 
         <div className="mt-8 flex flex-wrap gap-3">
           {days.map((item) => (
