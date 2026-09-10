@@ -4,7 +4,45 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { navItems } from "@/lib/event";
 
+type NavTone = "light" | "dark" | "black";
+
 const darkSectionIds = new Set(["programacao", "inscricao"]);
+
+function toneForSection(id: string): NavTone {
+  if (id === "inicio") return "black";
+  if (id === "footer" || darkSectionIds.has(id)) return "dark";
+  return "light";
+}
+
+const dotClass: Record<NavTone, { active: string; idle: string }> = {
+  dark: {
+    active: "border-white bg-white",
+    idle: "border-white/55 bg-transparent group-hover:border-white",
+  },
+  black: {
+    active: "border-black bg-black",
+    idle: "border-black/55 bg-transparent group-hover:border-black",
+  },
+  light: {
+    active: "border-leaf bg-leaf",
+    idle: "border-forest/40 bg-transparent group-hover:border-leaf",
+  },
+};
+
+const labelClass: Record<NavTone, { active: string; idle: string }> = {
+  dark: {
+    active: "text-white",
+    idle: "text-white/0 group-hover:text-white/80",
+  },
+  black: {
+    active: "text-black",
+    idle: "text-black/0 group-hover:text-black/80",
+  },
+  light: {
+    active: "text-forest",
+    idle: "text-forest/0 group-hover:text-forest/70",
+  },
+};
 
 function currentSectionId() {
   const activationLine = window.innerHeight * 0.32;
@@ -24,7 +62,7 @@ function scrollToHash(behavior: ScrollBehavior = "instant") {
   document.getElementById(id)?.scrollIntoView({ behavior, block: "start" });
 }
 
-function isTocOverDark() {
+function currentNavTone(): NavTone {
   const y = window.innerHeight / 2;
   const elements = [
     ...navItems.map((item) => document.getElementById(item.id)),
@@ -35,15 +73,15 @@ function isTocOverDark() {
     const rect = elements[i].getBoundingClientRect();
     if (rect.top <= y && rect.bottom > y) {
       const id = elements[i].tagName === "FOOTER" ? "footer" : elements[i].id;
-      return id === "footer" || darkSectionIds.has(id);
+      return toneForSection(id);
     }
   }
-  return false;
+  return "light";
 }
 
 export function SideNav() {
   const [active, setActive] = useState("inicio");
-  const [onDark, setOnDark] = useState(false);
+  const [tone, setTone] = useState<NavTone>("black");
   const syncRef = useRef<() => void>(() => {});
 
   useEffect(() => {
@@ -52,7 +90,7 @@ export function SideNav() {
 
     const update = () => {
       setActive(currentSectionId());
-      setOnDark(isTocOverDark());
+      setTone(currentNavTone());
     };
 
     const scheduleUpdate = () => {
@@ -123,30 +161,18 @@ export function SideNav() {
               aria-current={active === item.id ? "true" : undefined}
               onClick={() => {
                 setActive(item.id);
-                setOnDark(darkSectionIds.has(item.id));
+                setTone(toneForSection(item.id));
                 window.setTimeout(() => syncRef.current(), 0);
               }}
             >
               <span
                 className={`h-3 w-3 rounded-full border-2 transition ${
-                  active === item.id
-                    ? onDark
-                      ? "border-white bg-white"
-                      : "border-leaf bg-leaf"
-                    : onDark
-                      ? "border-white/55 bg-transparent group-hover:border-white"
-                      : "border-forest/40 bg-transparent group-hover:border-leaf"
+                  active === item.id ? dotClass[tone].active : dotClass[tone].idle
                 }`}
               />
               <span
                 className={`text-xs font-extrabold uppercase tracking-[0.18em] transition ${
-                  active === item.id
-                    ? onDark
-                      ? "text-white"
-                      : "text-forest"
-                    : onDark
-                      ? "text-white/0 group-hover:text-white/80"
-                      : "text-forest/0 group-hover:text-forest/70"
+                  active === item.id ? labelClass[tone].active : labelClass[tone].idle
                 }`}
               >
                 {item.label}

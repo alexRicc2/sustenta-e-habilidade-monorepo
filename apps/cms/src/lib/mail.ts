@@ -152,7 +152,7 @@ function buildEmail(
                       ${alimentacao ? `<p style="margin:0 0 6px;font-size:14px;"><strong>Coffee break:</strong> ${escapeHtml(alimentacao)}</p>` : ''}
                       <p style="margin:0 0 6px;font-size:14px;"><strong>Valor:</strong> ${valor}</p>
                       <p style="margin:0;font-size:14px;"><strong>Pagamento:</strong> ${metodo}</p>
-                      ${qrNumero ? `<p style="margin:8px 0 0;font-size:14px;"><strong>QR Code:</strong> ${qrNumero}</p>` : ''}
+                      
                     </td>
                   </tr>
                 </table>
@@ -163,8 +163,7 @@ function buildEmail(
                     <td align="center" style="padding:18px 12px;background:#f6faf3;border-radius:16px;">
                       <p style="margin:0 0 12px;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#6f8238;font-weight:800;">Seu QR Code de participação</p>
                       <img src="cid:qrcode@sustenta" alt="QR Code ${qrNumero}" width="220" height="220" style="display:block;margin:0 auto;background:#ffffff;border-radius:12px;border:0;" />
-                      <p style="margin:12px 0 0;font-size:20px;font-weight:800;color:#1c4a33;">${qrNumero}</p>
-                      <p style="margin:8px 0 0;font-size:13px;line-height:1.5;color:#15261c;">Apresente este código na entrada. Ele também corresponde ao crachá impresso ${qrNumero}.</p>
+                     
                     </td>
                   </tr>
                 </table>`
@@ -195,7 +194,7 @@ function buildEmail(
       : `Obrigado, ${nome}!\n\nRecebemos o comprovante Pix da sua inscrição no II Sustenta & Habilidade. Nossa equipe está analisando o comprovante e, em breve, a inscrição será validada.`
   const text = isPending
     ? `${pendingText}\n\nCategoria: ${categoria}${alimentacao ? `\nCoffee break: ${alimentacao}` : ''}\nValor: ${valor}\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
-    : `Inscrição confirmada, ${nome}!\n\nSua inscrição no II Sustenta & Habilidade está confirmada. Pagamento validado e vaga garantida.\n\nCategoria: ${categoria}${alimentacao ? `\nCoffee break: ${alimentacao}` : ''}\nValor: ${valor}${qrNumero ? `\nQR Code: ${qrNumero}` : ''}\n\nApresente o QR Code deste e-mail na entrada do evento.\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
+    : `Inscrição confirmada, ${nome}!\n\nSua inscrição no II Sustenta & Habilidade está confirmada. Pagamento validado e vaga garantida.\n\nCategoria: ${categoria}${alimentacao ? `\nCoffee break: ${alimentacao}` : ''}\nValor: ${valor}\nApresente o QR Code deste e-mail na entrada do evento.\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
 
   return { subject, html, text }
 }
