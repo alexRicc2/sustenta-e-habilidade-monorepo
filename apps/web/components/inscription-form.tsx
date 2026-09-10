@@ -91,7 +91,7 @@ function FileDrop({
   )
 }
 
-export function InscriptionForm() {
+export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<FormState>(initialState)
   const [comprovante, setComprovante] = useState<File | null>(null)
@@ -161,6 +161,7 @@ export function InscriptionForm() {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Não foi possível enviar a inscrição.")
       setSuccess(true)
+      onSuccess?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.")
     } finally {
