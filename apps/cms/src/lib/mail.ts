@@ -1,9 +1,19 @@
 import { existsSync } from 'fs'
+import { readFile } from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import sharp from 'sharp'
 import type { Payload } from 'payload'
 import type { Inscricoe } from '@/payload-types'
 import { formatQrNumero, qrcodeFromInscricao, qrPngBuffer } from '@/lib/qrcode'
+
+type InlineImage = {
+  filename: string
+  content: Buffer
+  cid: string
+  contentType: 'image/png' | 'image/jpeg'
+  contentDisposition: 'inline'
+}
 
 export type EmailKind = 'aguardando-aprovacao' | 'confirmacao'
 
@@ -42,18 +52,34 @@ function resolveLogoPath() {
   return null
 }
 
-async function getLogoAttachment() {
+async function readLogoBytes() {
   const localPath = resolveLogoPath()
-  if (localPath) {
-    return { filename: 'logo.png', path: localPath, cid: 'logo@sustenta' }
-  }
+  if (localPath) return readFile(localPath)
 
   const frontend = env('FRONTEND_URL') || 'http://localhost:3000'
+  const response = await fetch(`${frontend}/logo.png`)
+  if (!response.ok) return null
+  return Buffer.from(await response.arrayBuffer())
+}
+
+async function getLogoAttachment(): Promise<InlineImage | null> {
   try {
-    const response = await fetch(`${frontend}/logo.png`)
-    if (!response.ok) return null
-    const content = Buffer.from(await response.arrayBuffer())
-    return { filename: 'logo.png', content, cid: 'logo@sustenta' }
+    const raw = await readLogoBytes()
+    if (!raw?.byteLength) return null
+
+    const content = await sharp(raw)
+      .resize({ width: 360, withoutEnlargement: true })
+      .flatten({ background: '#ffffff' })
+      .jpeg({ quality: 82 })
+      .toBuffer()
+
+    return {
+      filename: 'logo.jpg',
+      content,
+      cid: 'logo@sustenta',
+      contentType: 'image/jpeg',
+      contentDisposition: 'inline',
+    }
   } catch {
     return null
   }
@@ -186,16 +212,15 @@ export async function sendInscricaoEmail(payload: Payload, inscricao: Inscricoe,
   const logo = await getLogoAttachment()
   const qr = kind === 'confirmacao' ? qrcodeFromInscricao(inscricao) : null
   const { subject, html, text } = buildEmail(kind, inscricao, Boolean(logo), qr)
-  const attachments: Array<{ filename: string; cid: string; path?: string; content?: Buffer }> = logo
-    ? [logo]
-    : []
+  const attachments: InlineImage[] = logo ? [logo] : []
 
   if (qr) {
-    const content = await qrPngBuffer(qr.codigo)
     attachments.push({
       filename: `qrcode-${formatQrNumero(qr.numero)}.png`,
-      content,
+      content: await qrPngBuffer(qr.codigo),
       cid: 'qrcode@sustenta',
+      contentType: 'image/png',
+      contentDisposition: 'inline',
     })
   }
 
