@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import { pix, ticketRequiresProof, ticketTypes, type TicketTypeId } from "@/lib/event"
 import { formatBRL } from "@/lib/money"
 
@@ -44,6 +44,15 @@ function maskPhone(value: string) {
     return digits.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2")
   }
   return digits.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2")
+}
+
+function Spinner({ className }: { className?: string }) {
+  return (
+    <svg className={`animate-spin ${className ?? ""}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+      <path d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
 }
 
 function FileDrop({
@@ -91,6 +100,13 @@ export function InscriptionForm() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    if (!success) return
+    const target = document.getElementById("inscricao") ?? rootRef.current
+    target?.scrollIntoView({ behavior: "instant", block: "start" })
+  }, [success])
 
   const ticket = ticketTypes.find((item) => item.id === form.categoria)
   const needsProof = Boolean(ticket && ticketRequiresProof(ticket.id))
@@ -158,7 +174,7 @@ export function InscriptionForm() {
       : "Recebemos seu comprovante PIX. A organização vai conferir o pagamento e confirmar para"
 
     return (
-      <div className="rounded-[28px] bg-forest p-8 text-center text-white md:p-12">
+      <div ref={rootRef} className="rounded-[28px] bg-forest p-8 text-center text-white md:p-12">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-sky">Inscrição recebida</p>
         <h2 className="mt-4 font-display text-3xl">Obrigado, {form.nomeCompleto.split(" ")[0]}!</h2>
         <p className="mt-4 text-white/80">
@@ -172,7 +188,11 @@ export function InscriptionForm() {
   }
 
   return (
-    <div className="overflow-hidden rounded-[28px] bg-forest text-white shadow-2xl">
+    <div
+      ref={rootRef}
+      aria-busy={submitting}
+      className="relative overflow-hidden rounded-[28px] bg-forest text-white shadow-2xl"
+    >
       <div className="bg-olive py-4 text-center text-sm font-extrabold uppercase tracking-[0.18em]">
         Inscrever-se
       </div>
@@ -359,8 +379,9 @@ export function InscriptionForm() {
           {step > 0 ? (
             <button
               type="button"
+              disabled={submitting}
               onClick={() => setStep((current) => current - 1)}
-              className="cursor-pointer rounded-2xl border border-white/20 px-5 py-4 font-extrabold uppercase tracking-widest"
+              className="cursor-pointer rounded-2xl border border-white/20 px-5 py-4 font-extrabold uppercase tracking-widest disabled:cursor-not-allowed disabled:opacity-40"
             >
               Voltar
             </button>
@@ -379,13 +400,33 @@ export function InscriptionForm() {
               type="button"
               disabled={!canNext || submitting}
               onClick={() => void submitPix()}
-              className="flex-1 cursor-pointer rounded-2xl bg-olive py-4 font-extrabold uppercase tracking-[0.18em] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex flex-1 cursor-pointer items-center justify-center gap-3 rounded-2xl bg-olive py-4 font-extrabold uppercase tracking-[0.18em] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {submitting ? "Enviando..." : "Finalizar inscrição"}
+              {submitting ? (
+                <>
+                  <Spinner className="h-5 w-5" />
+                  Enviando...
+                </>
+              ) : (
+                "Finalizar inscrição"
+              )}
             </button>
           )}
         </div>
       </div>
+
+      {submitting ? (
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-forest/80 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+        >
+          <Spinner className="h-10 w-10 text-sky" />
+          <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-white">
+            Enviando sua inscrição...
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }
