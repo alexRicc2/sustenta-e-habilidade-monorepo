@@ -1,5 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { InscriptionForm } from "@/components/inscription-form";
+import { event } from "@/lib/event";
+
+export const metadata: Metadata = {
+  title: "Inscrição",
+  description: `Garanta sua vaga no ${event.edition} ${event.name}. ${event.datesLabel}, ${event.location}, ${event.campus}. Escolha sua categoria e finalize o pagamento via Pix.`,
+  openGraph: {
+    title: `Inscreva-se no ${event.edition} ${event.name}`,
+    description: `Vagas abertas para ${event.datesLabel} no ${event.campus}. Pagamento via Pix.`,
+  },
+};
 
 export default function InscricoesPage() {
   return (

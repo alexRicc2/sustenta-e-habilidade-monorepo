@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { ticketRequiresProof, ticketTypes } from "@/lib/event"
+import { isDietaryPreference, ticketRequiresProof, ticketTypes } from "@/lib/event"
 import { cardTotalCents, centsToAmount } from "@/lib/money"
 import { uploadPayloadMedia } from "@/lib/payload-media"
 
@@ -26,6 +26,7 @@ type Body = {
   telefone?: string
   ra?: string
   isUnesp?: boolean
+  preferenciaAlimentar?: string
   categoria?: string
   cardFormData?: CardFormData
 }
@@ -93,6 +94,7 @@ async function parsePaymentRequest(request: Request): Promise<{
         telefone: String(formData.get("telefone") || ""),
         ra: String(formData.get("ra") || ""),
         isUnesp: String(formData.get("isUnesp")) === "true",
+        preferenciaAlimentar: String(formData.get("preferenciaAlimentar") || ""),
         categoria: String(formData.get("categoria") || ""),
         cardFormData,
       },
@@ -121,6 +123,10 @@ export async function POST(request: Request) {
 
   if (!body.nomeCompleto || !body.email || !body.cpf || !body.telefone || !ticket) {
     return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 400 })
+  }
+
+  if (!body.preferenciaAlimentar || !isDietaryPreference(body.preferenciaAlimentar)) {
+    return NextResponse.json({ error: "Selecione uma preferência alimentar." }, { status: 400 })
   }
 
   if (ticketRequiresProof(ticket.id) && !comprovantePermanencia) {
@@ -218,6 +224,7 @@ export async function POST(request: Request) {
       telefone: onlyDigits(body.telefone),
       ra: body.ra || "",
       isUnesp: Boolean(body.isUnesp),
+      preferenciaAlimentar: body.preferenciaAlimentar,
       categoria: ticket.id,
       valorCentavos: amountCents,
       metodoPagamento: "cartao",

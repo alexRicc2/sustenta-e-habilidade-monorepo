@@ -1,7 +1,14 @@
 "use client"
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
-import { pix, ticketRequiresProof, ticketTypes, type TicketTypeId } from "@/lib/event"
+import {
+  dietaryPreferences,
+  pix,
+  ticketRequiresProof,
+  ticketTypes,
+  type DietaryPreferenceId,
+  type TicketTypeId,
+} from "@/lib/event"
 import { formatBRL } from "@/lib/money"
 
 type FormState = {
@@ -11,6 +18,7 @@ type FormState = {
   telefone: string
   ra: string
   isUnesp: boolean
+  preferenciaAlimentar: DietaryPreferenceId | ""
   categoria: TicketTypeId | ""
 }
 
@@ -21,8 +29,12 @@ const initialState: FormState = {
   telefone: "",
   ra: "",
   isUnesp: false,
+  preferenciaAlimentar: "",
   categoria: "",
 }
+
+const dietTooltip =
+  "Esta informação será usada para definir o coffee break do evento, de acordo com a sua preferência alimentar."
 
 const steps = ["Seus dados", "Ingresso", "Pagamento"] as const
 
@@ -44,6 +56,88 @@ function maskPhone(value: string) {
     return digits.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2")
   }
   return digits.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2")
+}
+
+function DietPreferenceField({
+  value,
+  onChange,
+}: {
+  value: DietaryPreferenceId | ""
+  onChange: (value: DietaryPreferenceId) => void
+}) {
+  const [helpOpen, setHelpOpen] = useState(false)
+  const helpRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    if (!helpOpen) return
+
+    function closeOnOutside(event: PointerEvent) {
+      if (!helpRef.current?.contains(event.target as Node)) setHelpOpen(false)
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setHelpOpen(false)
+    }
+
+    document.addEventListener("pointerdown", closeOnOutside)
+    document.addEventListener("keydown", closeOnEscape)
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutside)
+      document.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [helpOpen])
+
+  return (
+    <fieldset className="space-y-3">
+      <div ref={helpRef} className="space-y-3">
+        <div className="flex items-center gap-2">
+          <legend className="text-sm font-semibold text-white/80">Preferência alimentar</legend>
+          <button
+            type="button"
+            aria-label="O que é a preferência alimentar?"
+            aria-expanded={helpOpen}
+            aria-controls="diet-tooltip"
+            onClick={() => setHelpOpen((current) => !current)}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/35 text-base font-extrabold text-sky hover:border-sky hover:bg-white/10"
+          >
+            ?
+          </button>
+        </div>
+        {helpOpen ? (
+          <p
+            id="diet-tooltip"
+            role="tooltip"
+            className="rounded-2xl bg-white px-3.5 py-3 text-sm font-medium leading-6 text-forest shadow-lg"
+          >
+            {dietTooltip}
+          </p>
+        ) : null}
+      </div>
+      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+        {dietaryPreferences.map((item) => {
+          const selected = value === item.id
+          return (
+            <label
+              key={item.id}
+              className={`flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border px-3 py-3 text-center text-sm font-extrabold transition ${
+                selected ? "border-sky bg-white/10 text-white" : "border-white/15 text-white/80 hover:border-white/40"
+              }`}
+            >
+              <input
+                type="radio"
+                name="preferenciaAlimentar"
+                value={item.id}
+                checked={selected}
+                onChange={() => onChange(item.id)}
+                className="sr-only"
+              />
+              {item.title}
+            </label>
+          )
+        })}
+      </div>
+    </fieldset>
+  )
 }
 
 function Spinner({ className }: { className?: string }) {
@@ -109,6 +203,7 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
   }, [success])
 
   const ticket = ticketTypes.find((item) => item.id === form.categoria)
+  const diet = dietaryPreferences.find((item) => item.id === form.preferenciaAlimentar)
   const needsProof = Boolean(ticket && ticketRequiresProof(ticket.id))
   const baseCents = ticket?.priceCents ?? 0
 
@@ -118,7 +213,8 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
         form.nomeCompleto.trim().length > 3 &&
         form.email.includes("@") &&
         onlyDigits(form.cpf).length === 11 &&
-        onlyDigits(form.telefone).length >= 10
+        onlyDigits(form.telefone).length >= 10 &&
+        Boolean(form.preferenciaAlimentar)
       )
     }
     if (step === 1) {
@@ -140,7 +236,7 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
   }
 
   async function submitPix() {
-    if (!ticket || !comprovante) return
+    if (!ticket || !comprovante || !form.preferenciaAlimentar) return
     if (ticketRequiresProof(ticket.id) && !comprovantePermanencia) return
     setSubmitting(true)
     setError("")
@@ -152,6 +248,7 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
       payload.set("telefone", onlyDigits(form.telefone))
       payload.set("ra", form.ra)
       payload.set("isUnesp", form.isUnesp ? "true" : "false")
+      payload.set("preferenciaAlimentar", form.preferenciaAlimentar)
       payload.set("categoria", ticket.id)
       payload.set("comprovante", comprovante)
       if (comprovantePermanencia) {
@@ -290,6 +387,10 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
               />
               Sou da UNESP
             </label>
+            <DietPreferenceField
+              value={form.preferenciaAlimentar}
+              onChange={(next) => update("preferenciaAlimentar", next)}
+            />
           </div>
         ) : null}
 
@@ -334,6 +435,12 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
                 <span>{ticket.title} × 1</span>
                 <span>{formatBRL(baseCents)}</span>
               </div>
+              {diet ? (
+                <div className="mt-3 flex justify-between gap-4 text-white/75">
+                  <span>Coffee break</span>
+                  <span>{diet.title}</span>
+                </div>
+              ) : null}
               <div className="mt-4 flex items-end justify-between border-t border-white/15 pt-4">
                 <span className="font-extrabold uppercase tracking-widest">Total</span>
                 <span className="font-display text-3xl text-sky">{formatBRL(baseCents)}</span>

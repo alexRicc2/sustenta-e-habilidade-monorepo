@@ -17,6 +17,12 @@ export const event = {
   },
 } as const
 
+export const siteSeo = {
+  title: 'II Sustenta & Habilidade — 2026',
+  description:
+    'Inscreva-se no II Sustenta & Habilidade: ações e inovações em Química na busca dos ODS. 05 e 06 de outubro de 2026, Auditório A, UNESP/IBILCE. Vagas abertas com pagamento via Pix.',
+} as const
+
 export const coordination = [
   {
     id: 'mario',
@@ -123,32 +129,44 @@ export const sponsorTiers = [
 
 export const ticketTypes = [
   {
+    id: 'permanencia-estudantil',
+    title: 'Permanência estudantil',
+    description: 'Estudantes da permanência estudantil. É necessário anexar um comprovante.',
+    priceCents: 3000,
+  },
+  {
     id: 'graduacao-unesp',
     title: 'Graduação UNESP',
     description: 'Estudantes de graduação da UNESP.',
-    priceCents: 5000,
+    priceCents: 4000,
   },
   {
     id: 'pos',
     title: 'Pós-graduação',
     description: 'Mestrado, doutorado e pós-doutorado.',
-    priceCents: 6000,
-  },
-  {
-    id: 'permanencia-estudantil',
-    title: 'Permanência estudantil',
-    description: 'Estudantes da permanência estudantil. É necessário anexar um comprovante.',
-    priceCents: 4000,
+    priceCents: 5000,
   },
   {
     id: 'publico-externo',
     title: 'Público externo',
     description: 'Estudantes de outras instituições, docentes, pesquisadores e demais participantes.',
-    priceCents: 6500,
+    priceCents: 6000,
   },
 ] as const
 
 export type TicketTypeId = (typeof ticketTypes)[number]['id']
+
+export const dietaryPreferences = [
+  { id: 'onivoro', title: 'Onívoro' },
+  { id: 'vegano', title: 'Vegano' },
+  { id: 'vegetariano', title: 'Vegetariano' },
+] as const
+
+export type DietaryPreferenceId = (typeof dietaryPreferences)[number]['id']
+
+export function isDietaryPreference(value: string): value is DietaryPreferenceId {
+  return dietaryPreferences.some((item) => item.id === value)
+}
 
 export function ticketRequiresProof(categoria: string) {
   return categoria === 'permanencia-estudantil'
@@ -406,6 +424,11 @@ export const schedule: Session[] = [
       'Química Verde: entre mitos, fatos e desafios — Cintia Milagre (IQ/UNESP Araraquara). Preparando futuros cientistas para um desenvolvimento sustentável — Juliana Vidal (Beyond Benign, remoto).',
   },
 ]
+
+export const developer = {
+  name: 'devAlex',
+  url: 'https://www.instagram.com/_dev_alex/',
+} as const
 
 export const instagram = {
   handle: 'sustenta_e_habilidade',

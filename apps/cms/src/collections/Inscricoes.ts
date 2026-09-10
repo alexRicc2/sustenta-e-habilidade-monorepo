@@ -42,6 +42,7 @@ export const Inscricoes: CollectionConfig = {
       'nomeCompleto',
       'email',
       'categoria',
+      'preferenciaAlimentar',
       'metodoPagamento',
       'statusPagamento',
       'qrcode',
@@ -131,6 +132,20 @@ export const Inscricoes: CollectionConfig = {
       type: 'checkbox',
       label: 'É da UNESP',
       defaultValue: false,
+    },
+    {
+      name: 'preferenciaAlimentar',
+      type: 'select',
+      required: true,
+      label: 'Preferência alimentar',
+      options: [
+        { label: 'Onívoro', value: 'onivoro' },
+        { label: 'Vegano', value: 'vegano' },
+        { label: 'Vegetariano', value: 'vegetariano' },
+      ],
+      admin: {
+        description: 'Usada para definir o coffee break do evento.',
+      },
     },
     {
       name: 'categoria',

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { ticketRequiresProof, ticketTypes } from "@/lib/event"
+import { isDietaryPreference, ticketRequiresProof, ticketTypes } from "@/lib/event"
 import { uploadPayloadMedia } from "@/lib/payload-media"
 
 const PAYLOAD_URL = process.env.PAYLOAD_URL || "http://localhost:3001"
@@ -9,11 +9,16 @@ export async function POST(request: Request) {
   const categoria = String(formData.get("categoria") || "")
   const ticket = ticketTypes.find((item) => item.id === categoria)
   const nomeCompleto = String(formData.get("nomeCompleto") || "")
+  const preferenciaAlimentar = String(formData.get("preferenciaAlimentar") || "")
   const comprovante = formData.get("comprovante")
   const comprovantePermanencia = formData.get("comprovantePermanencia")
 
   if (!ticket) {
     return NextResponse.json({ error: "Selecione um ingresso válido." }, { status: 400 })
+  }
+
+  if (!isDietaryPreference(preferenciaAlimentar)) {
+    return NextResponse.json({ error: "Selecione uma preferência alimentar." }, { status: 400 })
   }
 
   if (ticketRequiresProof(ticket.id) && !(comprovantePermanencia instanceof File && comprovantePermanencia.size > 0)) {
@@ -44,6 +49,7 @@ export async function POST(request: Request) {
         telefone: String(formData.get("telefone") || ""),
         ra: String(formData.get("ra") || ""),
         isUnesp: String(formData.get("isUnesp")) === "true",
+        preferenciaAlimentar,
         categoria: ticket.id,
         valorCentavos: ticket.priceCents,
         metodoPagamento: "pix",

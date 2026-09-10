@@ -189,6 +189,10 @@ export interface Inscricoe {
   instituicao?: string | null;
   ra?: string | null;
   isUnesp?: boolean | null;
+  /**
+   * Usada para definir o coffee break do evento.
+   */
+  preferenciaAlimentar: 'onivoro' | 'vegano' | 'vegetariano';
   categoria:
     'graduacao-unesp' | 'pos' | 'permanencia-estudantil' | 'publico-externo' | 'graduacao-outra' | 'profissional';
   /**
@@ -385,6 +389,7 @@ export interface InscricoesSelect<T extends boolean = true> {
   instituicao?: T;
   ra?: T;
   isUnesp?: T;
+  preferenciaAlimentar?: T;
   categoria?: T;
   valorCentavos?: T;
   metodoPagamento?: T;

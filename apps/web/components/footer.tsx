@@ -1,4 +1,4 @@
-import { event, instagram, navItems } from "@/lib/event";
+import { developer, event, instagram, navItems } from "@/lib/event";
 import { EventTagline } from "./ods-link";
 
 export function Footer() {
@@ -30,6 +30,17 @@ export function Footer() {
           </a>
         </nav>
       </div>
+      <p className="mx-auto mt-10 max-w-6xl border-t border-white/10 pt-6 text-center text-xs text-white/45">
+        developed by:{" "}
+        <a
+          href={developer.url}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold text-white/70 transition hover:text-sky"
+        >
+          {developer.name}
+        </a>
+      </p>
     </footer>
   );
 }

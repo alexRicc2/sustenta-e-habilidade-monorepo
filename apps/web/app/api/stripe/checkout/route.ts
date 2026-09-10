@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
-import { ticketTypes } from "@/lib/event"
+import { isDietaryPreference, ticketTypes } from "@/lib/event"
 
 const PAYLOAD_URL = process.env.PAYLOAD_URL || "http://localhost:3001"
 
@@ -21,12 +21,17 @@ export async function POST(request: Request) {
     instituicao?: string
     ra?: string
     isUnesp?: boolean
+    preferenciaAlimentar?: string
     categoria?: string
   }
 
   const ticket = ticketTypes.find((item) => item.id === body.categoria)
   if (!body.nomeCompleto || !body.email || !body.cpf || !body.telefone || !ticket) {
     return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 400 })
+  }
+
+  if (!body.preferenciaAlimentar || !isDietaryPreference(body.preferenciaAlimentar)) {
+    return NextResponse.json({ error: "Selecione uma preferência alimentar." }, { status: 400 })
   }
 
   const stripe = new Stripe(secret)
@@ -67,6 +72,7 @@ export async function POST(request: Request) {
       instituicao: body.instituicao || "",
       ra: body.ra || "",
       isUnesp: Boolean(body.isUnesp),
+      preferenciaAlimentar: body.preferenciaAlimentar,
       categoria: ticket.id,
       valorCentavos: ticket.priceCents,
       metodoPagamento: "cartao",

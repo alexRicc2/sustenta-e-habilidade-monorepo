@@ -16,6 +16,12 @@ const categoriaLabels: Record<Inscricoe['categoria'], string> = {
   'publico-externo': 'Público externo',
 }
 
+const dietLabels: Record<NonNullable<Inscricoe['preferenciaAlimentar']>, string> = {
+  onivoro: 'Onívoro',
+  vegano: 'Vegano',
+  vegetariano: 'Vegetariano',
+}
+
 function env(name: string) {
   return (process.env[name] || '').trim().replace(/^['"]|['"]$/g, '')
 }
@@ -61,6 +67,9 @@ function buildEmail(
 ) {
   const nome = firstName(inscricao.nomeCompleto)
   const categoria = categoriaLabels[inscricao.categoria] || inscricao.categoria
+  const alimentacao = inscricao.preferenciaAlimentar
+    ? dietLabels[inscricao.preferenciaAlimentar]
+    : null
   const valor = formatBRL(inscricao.valorCentavos)
   const metodo = inscricao.metodoPagamento === 'pix' ? 'Pix' : 'Cartão de crédito'
   const qrNumero = qr ? formatQrNumero(qr.numero) : null
@@ -114,6 +123,7 @@ function buildEmail(
                       <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#6f8238;font-weight:800;">Resumo da inscrição</p>
                       <p style="margin:0 0 6px;font-size:14px;"><strong>Nome:</strong> ${escapeHtml(inscricao.nomeCompleto)}</p>
                       <p style="margin:0 0 6px;font-size:14px;"><strong>Categoria:</strong> ${escapeHtml(categoria)}</p>
+                      ${alimentacao ? `<p style="margin:0 0 6px;font-size:14px;"><strong>Coffee break:</strong> ${escapeHtml(alimentacao)}</p>` : ''}
                       <p style="margin:0 0 6px;font-size:14px;"><strong>Valor:</strong> ${valor}</p>
                       <p style="margin:0;font-size:14px;"><strong>Pagamento:</strong> ${metodo}</p>
                       ${qrNumero ? `<p style="margin:8px 0 0;font-size:14px;"><strong>QR Code:</strong> ${qrNumero}</p>` : ''}
@@ -158,8 +168,8 @@ function buildEmail(
       ? `Obrigado, ${nome}!\n\nRecebemos sua inscrição no II Sustenta & Habilidade e o comprovante de permanência estudantil. Nossa equipe vai analisar os documentos e, em breve, a inscrição será validada.`
       : `Obrigado, ${nome}!\n\nRecebemos o comprovante Pix da sua inscrição no II Sustenta & Habilidade. Nossa equipe está analisando o comprovante e, em breve, a inscrição será validada.`
   const text = isPending
-    ? `${pendingText}\n\nCategoria: ${categoria}\nValor: ${valor}\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
-    : `Inscrição confirmada, ${nome}!\n\nSua inscrição no II Sustenta & Habilidade está confirmada. Pagamento validado e vaga garantida.\n\nCategoria: ${categoria}\nValor: ${valor}${qrNumero ? `\nQR Code: ${qrNumero}` : ''}\n\nApresente o QR Code deste e-mail na entrada do evento.\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
+    ? `${pendingText}\n\nCategoria: ${categoria}${alimentacao ? `\nCoffee break: ${alimentacao}` : ''}\nValor: ${valor}\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
+    : `Inscrição confirmada, ${nome}!\n\nSua inscrição no II Sustenta & Habilidade está confirmada. Pagamento validado e vaga garantida.\n\nCategoria: ${categoria}${alimentacao ? `\nCoffee break: ${alimentacao}` : ''}\nValor: ${valor}${qrNumero ? `\nQR Code: ${qrNumero}` : ''}\n\nApresente o QR Code deste e-mail na entrada do evento.\n\n05 e 06 de outubro de 2026 · UNESP/IBILCE`
 
   return { subject, html, text }
 }

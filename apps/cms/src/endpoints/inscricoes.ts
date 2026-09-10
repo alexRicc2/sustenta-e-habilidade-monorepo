@@ -12,6 +12,7 @@ export type InscricaoInput = {
   instituicao?: string
   ra?: string
   isUnesp?: boolean | string
+  preferenciaAlimentar: Inscricoe['preferenciaAlimentar']
   categoria: Inscricoe['categoria']
   metodoPagamento: Inscricoe['metodoPagamento']
   valorCentavos: number
@@ -43,6 +44,7 @@ async function createInscricao(payload: Payload, data: InscricaoInput) {
       instituicao: data.instituicao || '',
       ra: data.ra || '',
       isUnesp: data.isUnesp === true || data.isUnesp === 'true',
+      preferenciaAlimentar: data.preferenciaAlimentar,
       categoria: data.categoria,
       metodoPagamento: data.metodoPagamento,
       valorCentavos: Number(data.valorCentavos),
@@ -66,6 +68,7 @@ export const submitInscricaoEndpoint: Endpoint = {
       'email',
       'cpf',
       'telefone',
+      'preferenciaAlimentar',
       'categoria',
       'metodoPagamento',
       'valorCentavos',
@@ -81,6 +84,14 @@ export const submitInscricaoEndpoint: Endpoint = {
     const comprovantePermanenciaId =
       data.comprovantePermanenciaId ||
       (data as InscricaoInput & { comprovantePermanencia?: string }).comprovantePermanencia
+
+    if (
+      data.preferenciaAlimentar !== 'onivoro' &&
+      data.preferenciaAlimentar !== 'vegano' &&
+      data.preferenciaAlimentar !== 'vegetariano'
+    ) {
+      throw new APIError('Selecione uma preferência alimentar válida.', 400)
+    }
 
     if (data.metodoPagamento === 'pix' && !comprovanteId) {
       throw new APIError('Anexe o comprovante de pagamento PIX.', 400)
