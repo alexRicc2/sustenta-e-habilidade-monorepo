@@ -1,6 +1,6 @@
 "use client"
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useId, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react"
 import {
   dietaryPreferences,
   pix,
@@ -149,6 +149,65 @@ function Spinner({ className }: { className?: string }) {
   )
 }
 
+const acceptedFileTypes = "image/jpeg,image/png,image/webp,application/pdf"
+
+function isAcceptedFile(file: File) {
+  return (
+    file.type === "image/jpeg" ||
+    file.type === "image/png" ||
+    file.type === "image/webp" ||
+    file.type === "application/pdf" ||
+    /\.(jpe?g|png|webp|pdf)$/i.test(file.name)
+  )
+}
+
+function isImageFile(file: File) {
+  return file.type.startsWith("image/") || /\.(jpe?g|png|webp)$/i.test(file.name)
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) {
+    const kb = bytes / 1024
+    return `${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB`
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function UploadIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 16V7m0 0-3.5 3.5M12 7l3.5 3.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function PdfBadge() {
+  return (
+    <div className="flex h-40 flex-col items-center justify-center gap-3 bg-cream px-4 py-6 text-forest">
+      <span className="rounded-lg bg-forest px-3 py-1 text-xs font-extrabold tracking-[0.2em] text-white">PDF</span>
+      <p className="text-sm font-semibold text-forest/70">Documento anexado</p>
+    </div>
+  )
+}
+
+const previewUrls = new WeakMap<File, string>()
+
+function previewUrlFor(file: File) {
+  const existing = previewUrls.get(file)
+  if (existing) return existing
+  const url = URL.createObjectURL(file)
+  previewUrls.set(file, url)
+  return url
+}
+
 function FileDrop({
   label,
   hint,
@@ -160,28 +219,116 @@ function FileDrop({
   file: File | null
   onFile: (file: File | null) => void
 }) {
+  const inputId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [dragging, setDragging] = useState(false)
+  const previewUrl = file ? previewUrlFor(file) : null
+
+  function assign(next: File | null) {
+    if (next && !isAcceptedFile(next)) return
+    onFile(next)
+    if (!next && inputRef.current) inputRef.current.value = ""
+  }
+
+  function endDrag(event: DragEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false)
+  }
+
   return (
-    <label
-      className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/30 p-6 text-center"
-      onDragOver={(event) => event.preventDefault()}
+    <div
+      onDragEnter={(event) => {
+        event.preventDefault()
+        setDragging(true)
+      }}
+      onDragOver={(event) => {
+        event.preventDefault()
+        setDragging(true)
+      }}
+      onDragLeave={endDrag}
       onDrop={(event) => {
         event.preventDefault()
+        setDragging(false)
         const dropped = event.dataTransfer.files?.[0]
-        if (dropped) onFile(dropped)
+        if (dropped) assign(dropped)
       }}
+      className={`overflow-hidden rounded-2xl border-2 p-4 transition ${
+        file
+          ? "border-olive bg-olive/20"
+          : dragging
+            ? "border-sky border-dashed bg-white/10"
+            : "border-dashed border-white/30"
+      }`}
     >
-      <p className="font-extrabold">{label}</p>
-      <p className="mt-2 text-sm text-white/70">
-        {file ? file.name : "Clique ou arraste o arquivo aqui. JPG, PNG ou PDF."}
-      </p>
-      {hint ? <p className="mt-3 text-xs text-white/50">{hint}</p> : null}
       <input
+        id={inputId}
+        ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        className="hidden"
-        onChange={(event) => onFile(event.target.files?.[0] || null)}
+        accept={acceptedFileTypes}
+        aria-label={label}
+        className="sr-only"
+        onChange={(event) => assign(event.target.files?.[0] || null)}
       />
-    </label>
+
+      {file && previewUrl ? (
+        <div>
+          <div className="flex items-center gap-2" role="status">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-olive text-sm font-extrabold text-forest">
+              ✓
+            </span>
+            <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-olive">Arquivo anexado</p>
+          </div>
+
+          <div className="mt-3 overflow-hidden rounded-xl bg-white">
+            {isImageFile(file) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewUrl} alt={`Prévia de ${file.name}`} className="mx-auto max-h-52 w-full object-contain" />
+            ) : (
+              <PdfBadge />
+            )}
+          </div>
+
+          <p className="mt-3 truncate font-extrabold" title={file.name}>
+            {file.name}
+          </p>
+          <p className="text-sm text-white/70">{formatFileSize(file.size)}</p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={previewUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full bg-white/15 px-4 py-2 text-xs font-extrabold uppercase tracking-widest hover:bg-white/25"
+            >
+              Ver arquivo
+            </a>
+            <label
+              htmlFor={inputId}
+              className="cursor-pointer rounded-full bg-white/15 px-4 py-2 text-xs font-extrabold uppercase tracking-widest hover:bg-white/25"
+            >
+              Trocar arquivo
+            </label>
+            <button
+              type="button"
+              onClick={() => assign(null)}
+              className="rounded-full border border-white/25 px-4 py-2 text-xs font-extrabold uppercase tracking-widest hover:border-white/50"
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label htmlFor={inputId} className="flex min-h-48 cursor-pointer flex-col items-center justify-center text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-white/5 text-sky">
+            <UploadIcon className="h-7 w-7" />
+          </span>
+          <p className="mt-4 font-extrabold">{label}</p>
+          <p className="mt-2 text-sm text-white/70">
+            {dragging ? "Solte o arquivo para anexar." : "Clique ou arraste o arquivo aqui. JPG, PNG ou PDF."}
+          </p>
+          {hint ? <p className="mt-3 text-xs text-white/50">{hint}</p> : null}
+        </label>
+      )}
+    </div>
   )
 }
 

@@ -10,7 +10,7 @@ export const event = {
   location: 'Auditório A',
   campus: 'UNESP/IBILCE — São José do Rio Preto/SP',
   address: 'Rua Cristóvão Colombo, 2265, Jardim Nazareth, CEP 15054-000',
-  department: 'Departamento de Química e Ciências Ambientais (DQ)',
+  department: 'Departamento de Química (DQ)',
   coordinator: {
     name: 'Prof. Dr. Mario Henrique Gonzalez',
     role: 'Coordenador',
@@ -40,7 +40,7 @@ export const coordination = [
   },
   {
     id: 'clarice',
-    name: 'Clarice Dias Britto do Amaral',
+    name: 'Profa. Dra. Clarice Dias Britto do Amaral',
     role: 'Colaborador externo',
     photo: '/coordenacao/clarice.jpeg',
     imagePosition: 'center 18%',
