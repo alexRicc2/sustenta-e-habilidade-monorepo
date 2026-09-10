@@ -98,7 +98,7 @@ function DietPreferenceField({
             aria-expanded={helpOpen}
             aria-controls="diet-tooltip"
             onClick={() => setHelpOpen((current) => !current)}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/35 text-base font-extrabold text-sky hover:border-sky hover:bg-white/10"
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/35 text-base font-extrabold text-sky hover:border-sky hover:bg-white/10"
           >
             ?
           </button>
