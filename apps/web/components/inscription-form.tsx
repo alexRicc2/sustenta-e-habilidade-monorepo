@@ -1,20 +1,8 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { useCallback, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { pix, ticketRequiresProof, ticketTypes, type TicketTypeId } from "@/lib/event"
-import { CARD_FEE_RATE, cardTotalCents, centsToAmount, formatBRL } from "@/lib/money"
-import type { MercadoPagoCardFormData } from "@/components/mercado-pago-embed"
-
-const MercadoPagoEmbed = dynamic(
-  () => import("@/components/mercado-pago-embed").then((mod) => mod.MercadoPagoEmbed),
-  {
-    ssr: false,
-    loading: () => (
-      <p className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Carregando checkout do cartão...</p>
-    ),
-  },
-)
+import { formatBRL } from "@/lib/money"
 
 type FormState = {
   nomeCompleto: string
@@ -25,8 +13,6 @@ type FormState = {
   isUnesp: boolean
   categoria: TicketTypeId | ""
 }
-
-type PaymentMethod = "pix" | "cartao"
 
 const initialState: FormState = {
   nomeCompleto: "",
@@ -99,23 +85,16 @@ function FileDrop({
 export function InscriptionForm() {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<FormState>(initialState)
-  const [method, setMethod] = useState<PaymentMethod>("pix")
   const [comprovante, setComprovante] = useState<File | null>(null)
   const [comprovantePermanencia, setComprovantePermanencia] = useState<File | null>(null)
   const [copied, setCopied] = useState(false)
-  const [cardPaid, setCardPaid] = useState(false)
-  const [cardStatus, setCardStatus] = useState<"approved" | "pending">("approved")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
 
   const ticket = ticketTypes.find((item) => item.id === form.categoria)
   const needsProof = Boolean(ticket && ticketRequiresProof(ticket.id))
-  const waitingApproval = method === "pix" || needsProof
   const baseCents = ticket?.priceCents ?? 0
-  const cardCents = cardTotalCents(baseCents)
-  const chargeCents = method === "cartao" ? cardCents : baseCents
-  const feeCents = cardCents - baseCents
 
   const canNext = useMemo(() => {
     if (step === 0) {
@@ -131,9 +110,8 @@ export function InscriptionForm() {
       if (ticketRequiresProof(form.categoria) && !comprovantePermanencia) return false
       return true
     }
-    if (method === "pix") return Boolean(comprovante)
-    return cardPaid
-  }, [form, step, method, comprovante, comprovantePermanencia, cardPaid])
+    return Boolean(comprovante)
+  }, [form, step, comprovante, comprovantePermanencia])
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -144,41 +122,6 @@ export function InscriptionForm() {
     setCopied(true)
     window.setTimeout(() => setCopied(false), 2000)
   }
-
-  const onCardSubmit = useCallback(
-    async (cardFormData: MercadoPagoCardFormData) => {
-      setError("")
-      const payload = new FormData()
-      payload.set("nomeCompleto", form.nomeCompleto)
-      payload.set("email", form.email)
-      payload.set("cpf", onlyDigits(form.cpf))
-      payload.set("telefone", onlyDigits(form.telefone))
-      payload.set("ra", form.ra)
-      payload.set("isUnesp", form.isUnesp ? "true" : "false")
-      payload.set("categoria", form.categoria)
-      payload.set("cardFormData", JSON.stringify(cardFormData))
-      if (comprovantePermanencia) {
-        payload.set("comprovantePermanencia", comprovantePermanencia)
-      }
-      const response = await fetch("/api/mercado-pago/payment", {
-        method: "POST",
-        body: payload,
-      })
-      const data = (await response.json()) as {
-        error?: string
-        status?: string
-      }
-      if (data.status === "approved" || data.status === "in_process" || data.status === "pending") {
-        setCardPaid(true)
-        setCardStatus(data.status === "approved" ? "approved" : "pending")
-        setSuccess(true)
-        return
-      }
-      setError(data.error || "Não foi possível concluir o pagamento.")
-      return Promise.reject()
-    },
-    [form, comprovantePermanencia],
-  )
 
   async function submitPix() {
     if (!ticket || !comprovante) return
@@ -210,15 +153,9 @@ export function InscriptionForm() {
   }
 
   if (success) {
-    const successCopy = waitingApproval
-      ? needsProof && method === "pix"
-        ? "Recebemos seu comprovante PIX e o comprovante de permanência estudantil. A organização vai analisar os documentos e confirmar para"
-        : needsProof
-          ? "Recebemos o pagamento e o comprovante de permanência estudantil. A organização vai analisar os documentos e confirmar para"
-          : "Recebemos seu comprovante PIX. A organização vai conferir o pagamento e confirmar para"
-      : cardStatus === "approved"
-        ? "Pagamento com cartão confirmado. Enviaremos os detalhes para"
-        : "Recebemos seu pagamento. Assim que o Mercado Pago confirmar, enviaremos os detalhes para"
+    const successCopy = needsProof
+      ? "Recebemos seu comprovante PIX e o comprovante de permanência estudantil. A organização vai analisar os documentos e confirmar para"
+      : "Recebemos seu comprovante PIX. A organização vai conferir o pagamento e confirmar para"
 
     return (
       <div className="rounded-[28px] bg-forest p-8 text-center text-white md:p-12">
@@ -343,7 +280,6 @@ export function InscriptionForm() {
                 type="button"
                 onClick={() => {
                   update("categoria", item.id)
-                  setCardPaid(false)
                   if (!ticketRequiresProof(item.id)) setComprovantePermanencia(null)
                 }}
                 className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
@@ -374,88 +310,46 @@ export function InscriptionForm() {
           <div className="mt-10 space-y-6">
             <div className="rounded-2xl bg-white/8 p-5 text-sm">
               <div className="flex justify-between gap-4">
-                <span>
-                  {ticket.title} × 1
-                </span>
+                <span>{ticket.title} × 1</span>
                 <span>{formatBRL(baseCents)}</span>
               </div>
-              {method === "cartao" ? (
-                <div className="mt-2 flex justify-between gap-4 text-white/70">
-                  <span>Taxa do cartão ({Math.round(CARD_FEE_RATE * 100)}%)</span>
-                  <span>{formatBRL(feeCents)}</span>
-                </div>
-              ) : null}
               <div className="mt-4 flex items-end justify-between border-t border-white/15 pt-4">
                 <span className="font-extrabold uppercase tracking-widest">Total</span>
-                <span className="font-display text-3xl text-sky">{formatBRL(chargeCents)}</span>
+                <span className="font-display text-3xl text-sky">{formatBRL(baseCents)}</span>
               </div>
             </div>
 
             {needsProof ? (
               <p className="rounded-2xl bg-white/8 p-4 text-sm text-white/80">
-                Esta categoria fica pendente de aprovação da organização, mesmo no pagamento com cartão.
+                Esta categoria fica pendente de aprovação da organização.
                 {comprovantePermanencia ? ` Comprovante anexado: ${comprovantePermanencia.name}.` : ""}
               </p>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMethod("pix")
-                  setError("")
-                }}
-                className={`cursor-pointer rounded-2xl py-3 text-sm font-extrabold uppercase tracking-widest ${
-                  method === "pix" ? "bg-olive" : "bg-white/10"
-                }`}
-              >
-                Pix
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMethod("cartao")
-                  setError("")
-                }}
-                className={`cursor-pointer rounded-2xl py-3 text-sm font-extrabold uppercase tracking-widest ${
-                  method === "cartao" ? "bg-olive" : "bg-white/10"
-                }`}
-              >
-                Cartão de crédito
-              </button>
-            </div>
-
-            {method === "pix" ? (
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4 text-center text-forest">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={pix.qrSrc} alt="QR Code Pix" className="mx-auto h-56 w-56 object-contain" />
-                  <p className="mt-3 break-all text-xs font-semibold">{pix.key}</p>
-                  <button
-                    type="button"
-                    onClick={() => void copyPix()}
-                    className="mt-3 w-full cursor-pointer rounded-full bg-forest px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-white"
-                  >
-                    {copied ? "Copiado" : "Copiar chave Pix"}
-                  </button>
-                </div>
-                <FileDrop
-                  label="Comprovante de pagamento"
-                  hint={`Pague o valor exato de ${formatBRL(baseCents)} e anexe o comprovante.`}
-                  file={comprovante}
-                  onFile={setComprovante}
-                />
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-2xl bg-white p-4 text-center text-forest">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pix.qrSrc} alt="QR Code Pix" className="mx-auto h-56 w-56 object-contain" />
+                <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-forest/55">
+                  Destinatário
+                </p>
+                <p className="mt-1 text-sm font-extrabold leading-snug">{pix.recipient}</p>
+                <p className="mt-2 break-all text-xs font-semibold text-forest/70">{pix.key}</p>
+                <button
+                  type="button"
+                  onClick={() => void copyPix()}
+                  className="mt-3 w-full cursor-pointer rounded-full bg-forest px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-white"
+                >
+                  {copied ? "Copiado" : "Copiar chave Pix"}
+                </button>
               </div>
-            ) : (
-              <MercadoPagoEmbed
-                key={`${ticket.id}-${cardCents}`}
-                amount={centsToAmount(cardCents)}
-                email={form.email}
-                cpf={onlyDigits(form.cpf)}
-                onSubmitPayment={onCardSubmit}
-                onError={setError}
+              <FileDrop
+                label="Comprovante de pagamento"
+                hint={`Pague o valor exato de ${formatBRL(baseCents)} via Pix e anexe o comprovante.`}
+                file={comprovante}
+                onFile={setComprovante}
               />
-            )}
+            </div>
           </div>
         ) : null}
 
@@ -480,7 +374,7 @@ export function InscriptionForm() {
             >
               Próxima etapa
             </button>
-          ) : method === "pix" ? (
+          ) : (
             <button
               type="button"
               disabled={!canNext || submitting}
@@ -489,7 +383,7 @@ export function InscriptionForm() {
             >
               {submitting ? "Enviando..." : "Finalizar inscrição"}
             </button>
-          ) : null}
+          )}
         </div>
       </div>
     </div>

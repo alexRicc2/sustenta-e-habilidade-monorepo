@@ -143,7 +143,7 @@ function buildEmail(
             <tr>
               <td style="background:#1c4a33;padding:18px 32px;text-align:center;">
                 <p style="margin:0;font-size:12px;color:#e7f4e2;">Ações e inovações em Química na busca dos ODS</p>
-                <p style="margin:6px 0 0;font-size:11px;color:#6eb4d4;">GIQAV &amp; PET QA · DQCA/UNESP</p>
+                <p style="margin:6px 0 0;font-size:11px;color:#6eb4d4;">GIQAV &amp; PET QA · DQ/UNESP</p>
               </td>
             </tr>
           </table>

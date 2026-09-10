@@ -10,12 +10,36 @@ export const event = {
   location: 'Auditório A',
   campus: 'UNESP/IBILCE — São José do Rio Preto/SP',
   address: 'Rua Cristóvão Colombo, 2265, Jardim Nazareth, CEP 15054-000',
-  department: 'Departamento de Química e Ciências Ambientais (DQCA)',
+  department: 'Departamento de Química e Ciências Ambientais (DQ)',
   coordinator: {
     name: 'Prof. Dr. Mario Henrique Gonzalez',
     role: 'Coordenador',
   },
 } as const
+
+export const coordination = [
+  {
+    id: 'mario',
+    name: 'Prof. Dr. Mario Henrique Gonzalez',
+    role: 'Coordenador',
+    photo: '/coordenacao/mario.jpeg',
+    imagePosition: 'center 28%',
+  },
+  {
+    id: 'paulo',
+    name: 'Prof. Dr. Paulo Clairmont Feitosa de Lima Gomes',
+    role: 'Colaborador externo',
+    photo: '/coordenacao/paulo.jpeg',
+    imagePosition: 'center 18%',
+  },
+  {
+    id: 'clarice',
+    name: 'Clarice Dias Britto do Amaral',
+    role: 'Colaborador externo',
+    photo: '/coordenacao/clarice.jpeg',
+    imagePosition: 'center 18%',
+  },
+] as const
 
 export const odsCopy = {
   intro:
@@ -44,7 +68,8 @@ export function publicSrc(path: string) {
 }
 
 export const pix = {
-  key: 'alex.65.santanna@gmail.com',
+  key: '48.031.918/0011-04',
+  recipient: 'CAMPUS DE SÃO JOSÉ DO RIO PRETO',
   qrSrc: '/qrcode-pix.png',
 } as const
 
@@ -73,21 +98,25 @@ export const sponsorTiers = [
     sponsors: [
       { name: 'Beyond Benign', src: '/patrocinadores/diamond/beyondbenign.jpg' },
       { name: 'Mustang', src: '/patrocinadores/diamond/mustang.jpg' },
+      { name: 'IBILCE', src: '/patrocinadores/bronze/ibilce.jpeg' },
     ],
   },
   {
     name: 'Prata',
-    sponsors: [{ name: 'OxiTEM', src: '/patrocinadores/prata/Logo oxitem.jpeg' }],
+    sponsors: [{ name: 'OxiTEM', src: '/patrocinadores/prata/Logo oxitem.jpeg' }, {
+      name: 'GIQAV', src: '/logos/Logo GIQAV.jpeg'
+    }],
   },
   {
     name: 'Colaboradores',
     sponsors: [
       { name: 'Arco Íris', src: '/patrocinadores/bronze/arco-iris.jpg' },
-      { name: 'IBILCE', src: '/patrocinadores/bronze/ibilce.jpeg' },
+     
       { name: 'DM Costura Criativa', src: '/patrocinadores/bronze/Logo DM costura criativa.jpeg' },
       { name: 'Nathália Risso', src: '/patrocinadores/bronze/Logo nathália risso.jpeg' },
       { name: 'Sistema CFQ/CRQs', src: '/patrocinadores/bronze/Logo sistema CFQ_CRQs.jpeg' },
       { name: 'Pós-Graduação em Química UNESP', src: '/patrocinadores/bronze/pos-quimica.jpg' },
+      {name: 'Brauni', src: '/patrocinadores/bronze/brauni.jpeg'}
     ],
   },
 ] as const
@@ -203,7 +232,7 @@ export const schedule: Session[] = [
     kind: 'conferencia',
     title: 'Química Verde e sustentabilidade: histórico e evolução',
     speaker: 'Prof. Dr. Mario H. Gonzalez',
-    affiliation: 'DQCA/UNESP — Rio Preto',
+    affiliation: 'DQ/UNESP — Rio Preto',
   },
   {
     id: 's-coffee-1',
@@ -273,7 +302,7 @@ export const schedule: Session[] = [
     kind: 'minicurso',
     title: 'Preparo de membranas adsorventes oriundas de biomassas agroindustriais',
     speaker: 'Ms. Gabriela Aparecida Nogueira',
-    affiliation: 'DQCA/UNESP — Rio Preto',
+    affiliation: 'DQ/UNESP — Rio Preto',
   },
   {
     id: 's-m2',
@@ -282,7 +311,7 @@ export const schedule: Session[] = [
     kind: 'minicurso',
     title: 'Fundamentos de eletrostática para tratamento de efluentes',
     speaker: 'Prof. Dr. Thiago A. Lima Burgo',
-    affiliation: 'DQCA/UNESP — Rio Preto',
+    affiliation: 'DQ/UNESP — Rio Preto',
   },
   {
     id: 's-m3',
@@ -291,7 +320,7 @@ export const schedule: Session[] = [
     kind: 'minicurso',
     title: 'Servidores online aplicados à predição de toxicidade em compostos orgânicos',
     speaker: 'Prof. Dr. Otavio Augusto Chaves',
-    affiliation: 'DQCA/UNESP — Rio Preto',
+    affiliation: 'DQ/UNESP — Rio Preto',
   },
   {
     id: 't-c3',
@@ -327,7 +356,7 @@ export const schedule: Session[] = [
     kind: 'palestra',
     title: 'Terapia gênica não viral: fundamentos e aplicações',
     speaker: 'Prof. Dr. Márcio Tiera',
-    affiliation: 'DQCA/UNESP — Rio Preto',
+    affiliation: 'DQ/UNESP — Rio Preto',
   },
   {
     id: 't-p6',
@@ -337,7 +366,7 @@ export const schedule: Session[] = [
     title:
       'Desafios da catálise aplicada à conversão de biomassa vegetal em produtos de alto valor agregado',
     speaker: 'Prof. Dr. Gustavo Metsker',
-    affiliation: 'DQCA/UNESP — Rio Preto',
+    affiliation: 'DQ/UNESP — Rio Preto',
   },
   {
     id: 't-almoco',
@@ -416,5 +445,6 @@ export const navItems = [
   { id: 'programacao', label: 'Programação' },
   { id: 'patrocinadores', label: 'Patrocinadores' },
   { id: 'organizacao', label: 'Organização' },
+  { id: 'inscricao', label: 'Inscrição' },
   { id: 'instagram', label: 'Instagram' },
 ] as const

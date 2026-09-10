@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { event, instagram, navItems } from "@/lib/event";
 import { EventTagline } from "./ods-link";
 
@@ -26,9 +25,6 @@ export function Footer() {
               {item.label}
             </a>
           ))}
-          <Link href="/inscricoes" className="hover:text-sky">
-            Inscrições
-          </Link>
           <a href={instagram.url} target="_blank" rel="noreferrer" className="hover:text-sky">
             @{instagram.handle}
           </a>

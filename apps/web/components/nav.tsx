@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { navItems } from "@/lib/event";
 
-const darkSectionIds = new Set(["programacao"]);
+const darkSectionIds = new Set(["programacao", "inscricao"]);
 
 function currentSectionId() {
   const activationLine = window.innerHeight * 0.32;
@@ -16,6 +16,12 @@ function currentSectionId() {
     }
   }
   return current;
+}
+
+function scrollToHash(behavior: ScrollBehavior = "instant") {
+  const id = decodeURIComponent(window.location.hash.replace("#", ""));
+  if (!id) return;
+  document.getElementById(id)?.scrollIntoView({ behavior, block: "start" });
 }
 
 function isTocOverDark() {
@@ -76,17 +82,30 @@ export function SideNav() {
     const footer = document.querySelector("footer");
     if (footer) observer.observe(footer);
 
+    const onHashChange = () => {
+      scrollToHash("smooth");
+      syncAfterScroll();
+    };
+
+    const onLoad = () => scrollToHash();
+
     update();
+    scrollToHash();
+    [100, 400, 1000].forEach((delay) => {
+      timeouts.push(window.setTimeout(scrollToHash, delay));
+    });
     document.addEventListener("scroll", scheduleUpdate, { passive: true, capture: true });
     window.addEventListener("resize", scheduleUpdate);
-    window.addEventListener("hashchange", syncAfterScroll);
+    window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("load", onLoad);
     return () => {
       observer.disconnect();
       if (frame) window.cancelAnimationFrame(frame);
       timeouts.forEach((id) => window.clearTimeout(id));
       document.removeEventListener("scroll", scheduleUpdate, { capture: true });
       window.removeEventListener("resize", scheduleUpdate);
-      window.removeEventListener("hashchange", syncAfterScroll);
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("load", onLoad);
     };
   }, []);
 
@@ -104,7 +123,7 @@ export function SideNav() {
               aria-current={active === item.id ? "true" : undefined}
               onClick={() => {
                 setActive(item.id);
-                setOnDark(item.id === "programacao");
+                setOnDark(darkSectionIds.has(item.id));
                 window.setTimeout(() => syncRef.current(), 0);
               }}
             >

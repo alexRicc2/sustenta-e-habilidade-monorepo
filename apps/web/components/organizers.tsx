@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { event, organizers, publicSrc } from "@/lib/event";
+import { coordination, organizers, publicSrc } from "@/lib/event";
 import { MarkerHighlight } from "./marker-highlight";
 
 export function Organizers() {
@@ -10,16 +10,35 @@ export function Organizers() {
         <h2 className="mt-3 font-display text-4xl text-forest md:text-5xl">
           <MarkerHighlight>Organização</MarkerHighlight>
         </h2>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          <article className="rounded-3xl bg-forest p-7 text-white">
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-sky">Coordenação</p>
-            <h3 className="mt-4 font-display text-2xl">{event.coordinator.name}</h3>
-            <p className="mt-2 text-sm text-mint">{event.department}</p>
-            <p className="mt-6 text-sm leading-6 text-white/80">
-              GIQAV e PET QA, vinculados à UNESP/IBILCE, unem pesquisa em Química Analítica Verde e formação
-              tutorial em Química Ambiental.
-            </p>
-          </article>
+
+        <p className="mt-10 text-xs font-extrabold uppercase tracking-[0.2em] text-olive">Coordenação</p>
+        <div className="mt-4 grid gap-6 md:grid-cols-3">
+          {coordination.map((person) => (
+            <article
+              key={person.id}
+              className="overflow-hidden rounded-3xl bg-forest text-white shadow-sm shadow-forest/15"
+            >
+              <div className="relative aspect-4/5 bg-forest-deep">
+                <Image
+                  src={publicSrc(person.photo)}
+                  alt={person.name}
+                  fill
+                  className="object-cover"
+                  style={{ objectPosition: person.imagePosition }}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-6">
+                <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-sky">{person.role}</p>
+                <h3 className="mt-2 min-h-16 font-display text-xl leading-snug md:min-h-20 md:text-2xl">
+                  {person.name}
+                </h3>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
           {organizers.map((group) => (
             <article key={group.id} className="rounded-3xl bg-paper p-7 shadow-sm">
               <Image

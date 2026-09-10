@@ -52,7 +52,7 @@ export function MercadoPagoEmbed({
     <div className="overflow-hidden rounded-2xl bg-white p-3 text-forest">
       {publicKey.startsWith("TEST-") ? (
         <p className="mb-3 rounded-xl bg-mint px-3 py-2 text-xs leading-5 text-forest">
-          Sandbox Mercado Pago: no titular use o nome <strong>APRO</strong> e o CPF{" "}
+          Sandbox Mercado Pago: Cartão: 5480 8328 0103 3311, CVV: 123, validade: 11/30, no titular use o nome <strong>APRO</strong> e o CPF{" "}
           <strong>123.456.789-09</strong> para aprovar o pagamento de teste.
         </p>
       ) : null}
