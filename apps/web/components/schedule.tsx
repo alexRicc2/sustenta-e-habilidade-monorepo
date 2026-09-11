@@ -1,11 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import {
   days,
   kindLabels,
+  publicSrc,
   schedule,
   type DayId,
+  type Session,
   type SessionKind,
 } from "@/lib/event";
 import { MarkerHighlight } from "./marker-highlight";
@@ -17,6 +20,68 @@ const kindFilters: (SessionKind | "todos")[] = [
   "minicurso",
   "mesa",
 ];
+
+function sessionPortraits(session: Session) {
+  if (session.speakers?.length) {
+    return session.speakers
+      .filter((person) => person.photo)
+      .map((person) => ({ src: person.photo as string, alt: person.name }));
+  }
+  if (session.photo) {
+    return [{ src: session.photo, alt: session.speaker ?? session.title }];
+  }
+  return [];
+}
+
+function SpeakerPhoto({ src, alt, size = 56 }: { src: string; alt: string; size?: number }) {
+  return (
+    <div
+      className="relative shrink-0 overflow-hidden rounded-full bg-forest-deep ring-2 ring-white/25"
+      style={{ width: size, height: size }}
+    >
+      <Image
+        src={publicSrc(src)}
+        alt={alt}
+        fill
+        className="object-cover object-top"
+        sizes={`${size}px`}
+      />
+    </div>
+  );
+}
+
+function SessionSpeakers({ session }: { session: Session }) {
+  if (session.speakers?.length) {
+    return (
+      <ul className="mt-3 space-y-3">
+        {session.speakers.map((person) => (
+          <li key={person.name} className="flex items-start gap-3">
+            {person.photo ? <SpeakerPhoto src={person.photo} alt={person.name} size={48} /> : null}
+            <div className="min-w-0">
+              {person.topic ? (
+                <p className="text-sm font-semibold leading-snug text-white/90">{person.topic}</p>
+              ) : null}
+              <p className="mt-0.5 text-sm text-white/75">
+                {person.name}
+                {person.affiliation ? ` · ${person.affiliation}` : ""}
+                {person.remote ? " · remoto" : ""}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (!session.speaker) return null;
+
+  return (
+    <p className="mt-1 text-sm text-white/75">
+      {session.speaker}
+      {session.affiliation ? ` · ${session.affiliation}` : ""}
+    </p>
+  );
+}
 
 export function Schedule() {
   const [day, setDay] = useState<DayId | "todos">("segunda");
@@ -87,30 +152,36 @@ export function Schedule() {
         </div>
 
         <ul className="mt-10 space-y-4">
-          {sessions.map((session) => (
-            <li
-              key={session.id}
-              className="grid gap-4 rounded-3xl bg-white/8 p-5 md:grid-cols-[88px_1fr_auto] md:items-center"
-            >
-              <p className="font-display text-2xl text-sky">{session.time}</p>
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-olive">
-                  {kindLabels[session.kind]}
-                  {session.remote ? " · remoto" : ""}
-                </p>
-                <h3 className="mt-1 text-lg font-bold leading-snug">{session.title}</h3>
-                {session.speaker ? (
-                  <p className="mt-1 text-sm text-white/75">
-                    {session.speaker}
-                    {session.affiliation ? ` · ${session.affiliation}` : ""}
-                  </p>
+          {sessions.map((session) => {
+            const portraits = session.speakers?.length ? [] : sessionPortraits(session);
+
+            return (
+              <li
+                key={session.id}
+                className="flex flex-col gap-4 rounded-3xl bg-white/8 p-5 sm:flex-row sm:items-center"
+              >
+                <p className="font-display text-2xl text-sky sm:w-22">{session.time}</p>
+                {portraits.length ? (
+                  <div className="flex shrink-0">
+                    {portraits.map((portrait) => (
+                      <SpeakerPhoto key={portrait.src} src={portrait.src} alt={portrait.alt} />
+                    ))}
+                  </div>
                 ) : null}
-              </div>
-              <span className="hidden rounded-full border border-white/20 px-3 py-1 text-xs font-bold uppercase tracking-widest text-white/70 md:inline">
-                {session.day === "segunda" ? "05/10" : "06/10"}
-              </span>
-            </li>
-          ))}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-olive">
+                    {kindLabels[session.kind]}
+                    {session.remote ? " · remoto" : ""}
+                  </p>
+                  <h3 className="mt-1 text-lg font-bold leading-snug">{session.title}</h3>
+                  <SessionSpeakers session={session} />
+                </div>
+                <span className="hidden shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs font-bold uppercase tracking-widest text-white/70 md:inline">
+                  {session.day === "segunda" ? "05/10" : "06/10"}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </section>

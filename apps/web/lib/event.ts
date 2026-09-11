@@ -34,14 +34,14 @@ export const coordination = [
   {
     id: 'paulo',
     name: 'Prof. Dr. Paulo Clairmont Feitosa de Lima Gomes',
-    role: 'Colaborador externo',
+    role: 'Coordenador externo',
     photo: '/coordenacao/paulo.jpeg',
     imagePosition: 'center 18%',
   },
   {
     id: 'clarice',
     name: 'Profa. Dra. Clarice Dias Britto do Amaral',
-    role: 'Colaborador externo',
+    role: 'Coordenadora externo',
     photo: '/coordenacao/clarice.jpeg',
     imagePosition: 'center 18%',
   },
@@ -189,6 +189,14 @@ export type SessionKind =
 
 export type DayId = 'segunda' | 'terca'
 
+export type SessionSpeaker = {
+  name: string
+  affiliation?: string
+  photo?: string
+  remote?: boolean
+  topic?: string
+}
+
 export type Session = {
   id: string
   day: DayId
@@ -198,6 +206,8 @@ export type Session = {
   speaker?: string
   affiliation?: string
   remote?: boolean
+  photo?: string
+  speakers?: SessionSpeaker[]
 }
 
 export const kindLabels: Record<SessionKind, string> = {
@@ -251,6 +261,7 @@ export const schedule: Session[] = [
     title: 'Química Verde e sustentabilidade: histórico e evolução',
     speaker: 'Prof. Dr. Mario H. Gonzalez',
     affiliation: 'DQ/UNESP — Rio Preto',
+    photo: '/palestrantes/mario.jpeg',
   },
   {
     id: 's-coffee-1',
@@ -268,6 +279,7 @@ export const schedule: Session[] = [
       'MRM Profiling: uma ferramenta ambientalmente amigável para análises de amostras ambientais e de fluidos biológicos',
     speaker: 'Prof. Dr. Paulo Clairmont',
     affiliation: 'IQ/UNESP — Araraquara',
+    photo: '/palestrantes/paulo-clairmont.jpeg',
   },
   {
     id: 's-p2',
@@ -305,6 +317,7 @@ export const schedule: Session[] = [
       'Single Cell e Single Particle ICP-MS: ferramentas analíticas para a avaliação de interações entre nanomateriais e sistemas biológicos',
     speaker: 'Profa. Dra. Ana Beatriz Santos',
     affiliation: 'DQ/UFSCar — São Carlos',
+    photo: '/palestrantes/ana-beatriz.jpeg',
   },
   {
     id: 's-coffee-2',
@@ -321,6 +334,7 @@ export const schedule: Session[] = [
     title: 'Preparo de membranas adsorventes oriundas de biomassas agroindustriais',
     speaker: 'Ms. Gabriela Aparecida Nogueira',
     affiliation: 'DQ/UNESP — Rio Preto',
+    photo: '/palestrantes/gabriela-aparecida.jpeg',
   },
   {
     id: 's-m2',
@@ -339,6 +353,7 @@ export const schedule: Session[] = [
     title: 'Servidores online aplicados à predição de toxicidade em compostos orgânicos',
     speaker: 'Prof. Dr. Otavio Augusto Chaves',
     affiliation: 'DQ/UNESP — Rio Preto',
+    photo: '/palestrantes/otavio-augusto.jpeg',
   },
   {
     id: 't-c3',
@@ -350,6 +365,7 @@ export const schedule: Session[] = [
     speaker: 'Profa. Dra. Lorena Vidal',
     affiliation: 'Universidade de Alicante',
     remote: true,
+    photo: '/palestrantes/lorena-vidal.jpeg',
   },
   {
     id: 't-c4',
@@ -359,6 +375,7 @@ export const schedule: Session[] = [
     title: 'Metabolômica: decifrando a química da vida para um futuro sustentável',
     speaker: 'Profa. Dra. Ana Valéria Colnaghi',
     affiliation: 'IQ/UNICAMP — Campinas',
+    photo: '/palestrantes/ana-valeria.jpeg',
   },
   {
     id: 't-coffee-1',
@@ -385,6 +402,7 @@ export const schedule: Session[] = [
       'Desafios da catálise aplicada à conversão de biomassa vegetal em produtos de alto valor agregado',
     speaker: 'Prof. Dr. Gustavo Metsker',
     affiliation: 'DQ/UNESP — Rio Preto',
+    photo: '/palestrantes/gustavo-metzker.jpeg',
   },
   {
     id: 't-almoco',
@@ -420,8 +438,21 @@ export const schedule: Session[] = [
     time: '16:00',
     kind: 'mesa',
     title: 'Mesa de discussão',
-    speaker:
-      'Química Verde: entre mitos, fatos e desafios — Cintia Milagre (IQ/UNESP Araraquara). Preparando futuros cientistas para um desenvolvimento sustentável — Juliana Vidal (Beyond Benign, remoto).',
+    speakers: [
+      {
+        name: 'Cintia Milagre',
+        affiliation: 'IQ/UNESP Araraquara',
+        topic: 'Química Verde: entre mitos, fatos e desafios',
+        photo: '/palestrantes/cintia-milagre.jpeg',
+      },
+      {
+        name: 'Juliana Vidal',
+        affiliation: 'Beyond Benign',
+        topic: 'Preparando futuros cientistas para um desenvolvimento sustentável',
+        photo: '/palestrantes/juliana-vidal.jpeg',
+        remote: true,
+      },
+    ],
   },
 ]
 
@@ -460,6 +491,130 @@ export const instagram = {
     },
   ],
 } as const
+
+export type ComissaoTeam = 'GIQAV' | 'PET'
+
+export const teamLogos: Record<ComissaoTeam, string> = {
+  GIQAV: '/logos/Logo GIQAV.jpeg',
+  PET: '/logos/pet-quimica.avif',
+}
+
+export const comissao = {
+  people: [
+    {
+      name: 'Gabriela Aparecida Nogueira',
+      role: 'Doutorado',
+      photo: '/comissao/gabriela.webp',
+      team: 'GIQAV',
+    },
+    {
+      name: 'Tais',
+      role: 'Mestrado',
+      photo: '/comissao/tais.webp',
+      team: 'GIQAV',
+    },
+    {
+      name: 'Thamily',
+      role: 'Mestrado',
+      photo: '/comissao/thamily.webp',
+      team: 'GIQAV',
+    },
+   
+    {
+      name: 'Ana Beatriz',
+      role: 'Iniciação Científica',
+      photo: '/comissao/ana-beatriz.webp',
+      team: 'GIQAV',
+    },
+    {
+      name: 'Harumi',
+      role: 'Iniciação Científica',
+      photo: '/comissao/harumi.jpg',
+      team: 'GIQAV',
+    },
+    {
+      name: 'Maria Luiza',
+      role: 'Iniciação Científica',
+      photo: '/comissao/maria-luiza.webp',
+      team: 'GIQAV',
+    },
+    {
+      name: 'Henrique',
+      role: 'Iniciação Científica',
+      photo: '/comissao/henrique.jpg',
+      team: 'GIQAV',
+    },
+    {
+      name: 'Gabriel',
+      role: 'Petiano',
+      photo: '/comissao/gabriel.webp',
+      team: 'PET',
+    },
+    {
+      name: 'Fernanda',
+      role: 'Petiana',
+      photo: '/comissao/fernanda.webp',
+      team: 'PET',
+    },
+    {
+      name: 'Gustavo',
+      role: 'Petiano',
+      photo: '/comissao/gustavo.webp',
+      team: 'PET',
+    },
+    {
+      name: 'Isabelli',
+      role: 'Petiana',
+      photo: '/comissao/isabeli.webp',
+      team: 'PET',
+    },
+    {
+      name: 'Rafaela',
+      role: 'Petiana',
+      photo: '/comissao/rafaela.jpg',
+      team: 'PET',
+    },
+    {
+      name: 'Madu Vidal',
+      role: 'Petiana',
+      photo: '/comissao/madu-vidal.jpg',
+      team: 'PET',
+    },
+    {
+      name: 'Julia',
+      role: 'Petiana',
+      photo: '/comissao/julia.jpg',
+      team: 'PET',
+    },
+    {
+      name: 'Sophia',
+      role: 'Petiana',
+      photo: '/comissao/sophia.webp',
+      team: 'PET',
+    },
+    {
+      name: 'Madua Santana',
+      role: 'Petiana',
+      photo: '/comissao/madu-santos.jpg',
+      team: 'PET',
+    },
+    {
+      name: 'Lucas',
+      role: 'Petiano',
+      photo: '/comissao/lucas.webp',
+      team: 'PET',
+    },
+    {
+      name: 'Luna',
+      role: 'Petiana',
+      photo: '/comissao/luna.webp',
+      team: 'PET',
+    },
+  ],
+} as const satisfies {
+  people: { name: string; role: string; photo: string; team: ComissaoTeam }[]
+}
+
 
 export const navItems = [
   { id: 'inicio', label: 'Início' },

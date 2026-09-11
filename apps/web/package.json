@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -11,6 +11,7 @@
   "dependencies": {
     "@mercadopago/sdk-react": "^1.0.7",
     "@stripe/stripe-js": "^9.15.0",
+    "lottie-react": "^3.1.2",
     "next": "16.3.4",
     "qrcode": "^1.5.4",
     "react": "19.2.8",

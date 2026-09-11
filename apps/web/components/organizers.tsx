@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { coordination, organizers, publicSrc } from "@/lib/event";
+import { ComissaoCarousel } from "./comissao-carousel";
 import { MarkerHighlight } from "./marker-highlight";
 
 export function Organizers() {
@@ -38,7 +39,10 @@ export function Organizers() {
           ))}
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <p className="mt-14 text-xs font-extrabold uppercase tracking-[0.2em] text-olive">Comissão Organizadora</p>
+        <ComissaoCarousel />
+
+        <div className="mt-14 grid gap-6 md:grid-cols-2">
           {organizers.map((group) => (
             <article key={group.id} className="rounded-3xl bg-paper p-7 shadow-sm">
               <Image
