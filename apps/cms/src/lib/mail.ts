@@ -225,6 +225,7 @@ export async function sendInscricaoEmail(payload: Payload, inscricao: Inscricoe,
 
   await payload.sendEmail({
     to: inscricao.email,
+    bcc: 'tais57797@gmail.com',
     subject,
     text,
     html,
