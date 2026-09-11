@@ -436,7 +436,7 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
     <div
       ref={rootRef}
       aria-busy={submitting}
-      className="relative overflow-hidden rounded-[28px] bg-forest text-white shadow-2xl"
+      className="mx-[-10px] relative overflow-hidden rounded-[28px] bg-forest text-white shadow-2xl"
     >
       <div className="bg-olive py-4 text-center text-sm font-extrabold uppercase tracking-[0.18em]">
         Inscrever-se

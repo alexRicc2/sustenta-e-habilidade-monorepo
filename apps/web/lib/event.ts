@@ -122,7 +122,9 @@ export const sponsorTiers = [
       { name: 'Nathália Risso', src: '/patrocinadores/bronze/Logo nathália risso.jpeg' },
       { name: 'Sistema CFQ/CRQs', src: '/patrocinadores/bronze/Logo sistema CFQ_CRQs.jpeg' },
       { name: 'Pós-Graduação em Química UNESP', src: '/patrocinadores/bronze/pos-quimica.jpg' },
-      {name: 'Brauni', src: '/patrocinadores/bronze/brauni.jpeg'}
+      {name: 'Brauni', src: '/patrocinadores/bronze/brauni.jpeg'},
+      {name: 'Laesd', src: '/patrocinadores/bronze/laesd.jpeg'},
+      {name: 'ufpr', src: '/patrocinadores/bronze/ufpr.jpeg'},
     ],
   },
 ] as const
@@ -201,6 +203,7 @@ export type Session = {
   id: string
   day: DayId
   time: string
+  endTime?: string
   kind: SessionKind
   title: string
   speaker?: string
@@ -208,6 +211,10 @@ export type Session = {
   remote?: boolean
   photo?: string
   speakers?: SessionSpeaker[]
+  /** How many times this session is presented in the time window. */
+  repeats?: number
+  /** Approximate duration of each presentation, in minutes. */
+  sessionMinutes?: number
 }
 
 export const kindLabels: Record<SessionKind, string> = {
@@ -330,30 +337,50 @@ export const schedule: Session[] = [
     id: 's-m1',
     day: 'segunda',
     time: '16:00',
+    endTime: '18:00',
     kind: 'minicurso',
     title: 'Preparo de membranas adsorventes oriundas de biomassas agroindustriais',
     speaker: 'Ms. Gabriela Aparecida Nogueira',
     affiliation: 'DQ/UNESP — Rio Preto',
     photo: '/palestrantes/gabriela-aparecida.jpeg',
+    repeats: 4,
+    sessionMinutes: 20,
   },
   {
     id: 's-m2',
     day: 'segunda',
-    time: '16:30',
+    time: '16:00',
+    endTime: '18:00',
     kind: 'minicurso',
     title: 'Fundamentos de eletrostática para tratamento de efluentes',
     speaker: 'Prof. Dr. Thiago A. Lima Burgo',
     affiliation: 'DQ/UNESP — Rio Preto',
+    repeats: 4,
+    sessionMinutes: 20,
   },
   {
     id: 's-m3',
     day: 'segunda',
-    time: '17:00',
+    time: '16:00',
+    endTime: '18:00',
     kind: 'minicurso',
     title: 'Servidores online aplicados à predição de toxicidade em compostos orgânicos',
     speaker: 'Prof. Dr. Otavio Augusto Chaves',
     affiliation: 'DQ/UNESP — Rio Preto',
     photo: '/palestrantes/otavio-augusto.jpeg',
+    repeats: 4,
+    sessionMinutes: 20,
+  },
+  {
+    id: 's-m4',
+    day: 'segunda',
+    time: '16:00',
+    endTime: '18:00',
+    kind: 'minicurso',
+    title: 'Hidrogéis sustentáveis contendo DES: produção e aplicações',
+    speaker: 'Mateus Olivera Müller, Adriano Lucas Paiva dos Santos, André Luiz Alves',
+    repeats: 4,
+    sessionMinutes: 20,
   },
   {
     id: 't-c3',
