@@ -56,11 +56,19 @@ function groupSchedule(sessions: Session[]): ScheduleRow[] {
   return rows;
 }
 
+function speakersHaveTopics(session: Session) {
+  return Boolean(session.speakers?.some((person) => person.topic));
+}
+
 function sessionPortraits(session: Session) {
-  if (session.speakers?.length) {
+  if (session.speakers?.length && !speakersHaveTopics(session)) {
     return session.speakers
       .filter((person) => person.photo)
-      .map((person) => ({ src: person.photo as string, alt: person.name }));
+      .map((person) => ({
+        src: person.photo as string,
+        alt: person.name,
+        imagePosition: person.imagePosition,
+      }));
   }
   if (session.photo) {
     return [{ src: session.photo, alt: session.speaker ?? session.title }];
@@ -68,30 +76,88 @@ function sessionPortraits(session: Session) {
   return [];
 }
 
-function SpeakerPhoto({ src, alt, size = 56 }: { src: string; alt: string; size?: number }) {
+function SpeakerPhoto({
+  src,
+  alt,
+  size = 56,
+  imagePosition,
+}: {
+  src: string;
+  alt: string;
+  size?: number;
+  imagePosition?: string;
+}) {
   return (
     <div
-      className="relative shrink-0 overflow-hidden rounded-full bg-forest-deep ring-2 ring-white/25"
+      className="relative shrink-0 overflow-hidden rounded-full bg-forest-deep ring-2 ring-white/30"
       style={{ width: size, height: size }}
     >
       <Image
         src={publicSrc(src)}
         alt={alt}
         fill
-        className="object-cover object-top"
+        className="object-cover"
+        style={{ objectPosition: imagePosition ?? "center top" }}
         sizes={`${size}px`}
       />
     </div>
   );
 }
 
+function SpeakerPortraits({
+  portraits,
+  size = 56,
+}: {
+  portraits: { src: string; alt: string; imagePosition?: string }[];
+  size?: number;
+}) {
+  if (!portraits.length) return null;
+
+  return (
+    <div className="flex shrink-0 flex-wrap gap-1.5 self-start">
+      {portraits.map((portrait) => (
+        <SpeakerPhoto
+          key={portrait.src}
+          src={portrait.src}
+          alt={portrait.alt}
+          size={size}
+          imagePosition={portrait.imagePosition}
+        />
+      ))}
+    </div>
+  );
+}
+
 function SessionSpeakers({ session }: { session: Session }) {
   if (session.speakers?.length) {
+    if (!speakersHaveTopics(session)) {
+      return (
+        <div className="mt-1">
+          <p className="text-sm text-white/75">
+            {session.speakers
+              .map((person) =>
+                [person.name, person.affiliation, person.remote ? "remoto" : null]
+                  .filter(Boolean)
+                  .join(" · "),
+              )
+              .join(", ")}
+          </p>
+        </div>
+      );
+    }
+
     return (
       <ul className="mt-3 space-y-3">
         {session.speakers.map((person) => (
           <li key={person.name} className="flex items-start gap-3">
-            {person.photo ? <SpeakerPhoto src={person.photo} alt={person.name} size={48} /> : null}
+            {person.photo ? (
+              <SpeakerPhoto
+                src={person.photo}
+                alt={person.name}
+                size={48}
+                imagePosition={person.imagePosition}
+              />
+            ) : null}
             <div className="min-w-0">
               {person.topic ? (
                 <p className="text-sm font-semibold leading-snug text-white/90">{person.topic}</p>
@@ -135,14 +201,23 @@ function SessionCompanyLink({ session }: { session: Session }) {
       rel="noreferrer"
       className="mt-2 inline-flex items-center gap-2 text-sm font-bold text-sky underline decoration-sky/50 underline-offset-4 transition hover:text-white"
     >
-      {session.companyLogo ? (
-        <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md bg-white ring-1 ring-white/30">
+      {session.companyLogo === '/patrocinadores/diamond/merck.png' ? (<span className="relative h-6 w-16 shrink-0 overflow-hidden rounded-md bg-white ">
           <Image
             src={publicSrc(session.companyLogo)}
             alt=""
             fill
-            className="object-contain p-0.5"
-            sizes="28px"
+            className="object-contain px-0.5"
+            sizes="40px"
+
+          />
+        </span>) : session.companyLogo === '/patrocinadores/diamond/mustang.jpg' ? (
+        <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-white ">
+          <Image
+            src={publicSrc(session.companyLogo)}
+            alt=""
+            fill
+            className="object-contain"
+            sizes="40px"
           />
         </span>
       ) : null}
@@ -189,18 +264,12 @@ function parallelLabel(kind: SessionKind) {
 }
 
 function SingleSessionCard({ session }: { session: Session }) {
-  const portraits = session.speakers?.length ? [] : sessionPortraits(session);
+  const portraits = sessionPortraits(session);
 
   return (
     <li className="flex flex-col gap-4 rounded-3xl bg-white/8 p-5 sm:flex-row sm:items-center">
       <TimeCell time={session.time} endTime={session.endTime} />
-      {portraits.length ? (
-        <div className="flex shrink-0">
-          {portraits.map((portrait) => (
-            <SpeakerPhoto key={portrait.src} src={portrait.src} alt={portrait.alt} />
-          ))}
-        </div>
-      ) : null}
+      <SpeakerPortraits portraits={portraits} />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-olive">
           {kindLabels[session.kind]}
@@ -243,13 +312,7 @@ function ParallelSessionCard({ sessions }: { sessions: Session[] }) {
 
           return (
             <li key={session.id} className="flex flex-col md:flex-row gap-3 rounded-2xl bg-forest-deep/45 p-4">
-              {portraits.length ? (
-                <div className="flex shrink-0 self-start">
-                  {portraits.map((portrait) => (
-                    <SpeakerPhoto key={portrait.src} src={portrait.src} alt={portrait.alt} size={48} />
-                  ))}
-                </div>
-              ) : null}
+              <SpeakerPortraits portraits={portraits} size={48} />
               <div className="min-w-0 flex-1">
                 {repeats && minutes ? (
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-sky">

@@ -118,6 +118,12 @@ export const sponsorTiers: { name: string; sponsors: Sponsor[] }[] = [
         src: '/patrocinadores/diamond/mustang.jpg',
         url: 'https://mustangpluron.com',
       },
+      { name: 'Merck',
+        src: '/patrocinadores/diamond/merck.png',
+        url: 'https://www.merckgroup.com/'
+
+      },
+
       { name: 'IBILCE', src: '/patrocinadores/bronze/ibilce.jpeg' },
     ],
   },
@@ -139,6 +145,8 @@ export const sponsorTiers: { name: string; sponsors: Sponsor[] }[] = [
       {name: 'Brauni', src: '/patrocinadores/bronze/brauni.jpeg'},
       {name: 'Laesd', src: '/patrocinadores/bronze/laesd.jpeg'},
       {name: 'ufpr', src: '/patrocinadores/bronze/ufpr.jpeg'},
+      { name: 'CTCrom' , src: '/patrocinadores/bronze/CTCrom_Final.jpg'}
+
     ],
   },
 ]
@@ -209,6 +217,7 @@ export type SessionSpeaker = {
   name: string
   affiliation?: string
   photo?: string
+  imagePosition?: string
   remote?: boolean
   topic?: string
 }
@@ -397,7 +406,15 @@ export const schedule: Session[] = [
     endTime: '18:00',
     kind: 'minicurso',
     title: 'Hidrogéis sustentáveis contendo DES: produção e aplicações',
-    speaker: 'Mateus Olivera Müller, Adriano Lucas Paiva dos Santos, André Luiz Alves',
+    speakers: [
+      { name: 'Mateus Olivera Müller', photo: '/palestrantes/mateus.jpeg' },
+      {
+        name: 'Adriano Lucas Paiva dos Santos',
+        photo: '/palestrantes/adriano.jpeg',
+        imagePosition: '28% 48%',
+      },
+      { name: 'André Luiz Alves', photo: '/palestrantes/andre.jpeg' },
+    ],
     repeats: 4,
     sessionMinutes: 20,
   },
@@ -476,8 +493,14 @@ export const schedule: Session[] = [
     id: 't-e2',
     day: 'terca',
     time: '14:50',
-    kind: 'empresa',
-    title: 'Empresa 02 — programação a confirmar',
+    kind: 'palestra',
+    title:
+      'Cromatografia Sustentável: Caminhos para um Laboratório mais Verde',
+    speaker: 'Caroline Modeneze',
+    photo: '/palestrantes/caroline-modeneze.jpeg',
+    companyLogo: '/patrocinadores/diamond/merck.png',
+    url: 'https://www.merckgroup.com/',
+    urlLabel: 'Merck',
   },
   {
     id: 't-coffee-2',
