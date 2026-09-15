@@ -134,25 +134,25 @@ export const ticketTypes = [
     id: 'permanencia-estudantil',
     title: 'Permanência estudantil',
     description: 'Estudantes da permanência estudantil. É necessário anexar um comprovante.',
-    priceCents: 3000,
+    priceCents: 2000,
   },
   {
     id: 'graduacao-unesp',
     title: 'Graduação UNESP',
     description: 'Estudantes de graduação da UNESP.',
-    priceCents: 4000,
+    priceCents: 3000,
   },
   {
     id: 'pos',
     title: 'Pós-graduação',
     description: 'Mestrado, doutorado e pós-doutorado.',
-    priceCents: 5000,
+    priceCents: 4000,
   },
   {
     id: 'publico-externo',
     title: 'Público externo',
     description: 'Estudantes de outras instituições, docentes, pesquisadores e demais participantes.',
-    priceCents: 6000,
+    priceCents: 5000,
   },
 ] as const
 
