@@ -108,13 +108,46 @@ function SessionSpeakers({ session }: { session: Session }) {
     );
   }
 
-  if (!session.speaker) return null;
+  if (!session.speaker && !session.url) return null;
 
   return (
-    <p className="mt-1 text-sm text-white/75">
-      {session.speaker}
-      {session.affiliation ? ` · ${session.affiliation}` : ""}
-    </p>
+    <div className="mt-1">
+      {session.speaker ? (
+        <p className="text-sm text-white/75">
+          {session.speaker}
+          {session.affiliation ? ` · ${session.affiliation}` : ""}
+        </p>
+      ) : null}
+      <SessionCompanyLink session={session} />
+    </div>
+  );
+}
+
+function SessionCompanyLink({ session }: { session: Session }) {
+  if (!session.url) return null;
+
+  const label = session.urlLabel ?? session.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+
+  return (
+    <a
+      href={session.url}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-2 inline-flex items-center gap-2 text-sm font-bold text-sky underline decoration-sky/50 underline-offset-4 transition hover:text-white"
+    >
+      {session.companyLogo ? (
+        <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md bg-white ring-1 ring-white/30">
+          <Image
+            src={publicSrc(session.companyLogo)}
+            alt=""
+            fill
+            className="object-contain p-0.5"
+            sizes="28px"
+          />
+        </span>
+      ) : null}
+      {label}
+    </a>
   );
 }
 

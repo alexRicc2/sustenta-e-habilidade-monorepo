@@ -25,20 +25,44 @@ export function Sponsors() {
                     : "grid-cols-2 md:grid-cols-3"
                 }`}
               >
-                {tier.sponsors.map((sponsor) => (
-                  <div
-                    key={sponsor.src}
-                    className="flex h-28 items-center justify-center rounded-2xl border border-forest/10 bg-paper px-5 py-4 shadow-sm shadow-forest/5 md:h-32"
-                  >
+                {tier.sponsors.map((sponsor) => {
+                  const cardClassName =
+                    "flex h-28 flex-col items-center justify-center gap-1.5 rounded-2xl border border-forest/10 bg-paper px-5 py-4 shadow-sm shadow-forest/5 md:h-32";
+                  const logo = (
                     <Image
                       src={publicSrc(sponsor.src)}
                       alt={sponsor.name}
                       width={220}
                       height={96}
-                      className="max-h-20 w-auto max-w-full object-contain md:max-h-24"
+                      className={`max-w-full object-contain ${sponsor.url ? "max-h-16 md:max-h-20" : "max-h-20 md:max-h-24"}`}
                     />
-                  </div>
-                ))}
+                  );
+
+                  if (sponsor.url) {
+                    const host = sponsor.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+                    return (
+                      <a
+                        key={sponsor.src}
+                        href={sponsor.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${sponsor.name} — ${host}`}
+                        className={`${cardClassName} transition hover:border-olive hover:shadow-md`}
+                      >
+                        {logo}
+                        <span className="text-[11px] font-bold text-forest/65 underline decoration-olive/80 underline-offset-2">
+                          {host}
+                        </span>
+                      </a>
+                    );
+                  }
+
+                  return (
+                    <div key={sponsor.src} className={cardClassName}>
+                      {logo}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}

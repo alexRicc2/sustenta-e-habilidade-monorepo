@@ -98,12 +98,26 @@ export const organizers = [
   },
 ] as const
 
-export const sponsorTiers = [
+export type Sponsor = {
+  name: string
+  src: string
+  url?: string
+}
+
+export const sponsorTiers: { name: string; sponsors: Sponsor[] }[] = [
   {
     name: 'Diamante',
     sponsors: [
-      { name: 'Beyond Benign', src: '/patrocinadores/diamond/beyondbenign.jpg' },
-      { name: 'Mustang', src: '/patrocinadores/diamond/mustang.jpg' },
+      {
+        name: 'Beyond Benign',
+        src: '/patrocinadores/diamond/beyondbenign.jpg',
+        url: 'https://www.beyondbenign.org/',
+      },
+      {
+        name: 'Mustang Pluron',
+        src: '/patrocinadores/diamond/mustang.jpg',
+        url: 'https://mustangpluron.com',
+      },
       { name: 'IBILCE', src: '/patrocinadores/bronze/ibilce.jpeg' },
     ],
   },
@@ -127,7 +141,7 @@ export const sponsorTiers = [
       {name: 'ufpr', src: '/patrocinadores/bronze/ufpr.jpeg'},
     ],
   },
-] as const
+]
 
 export const ticketTypes = [
   {
@@ -215,6 +229,9 @@ export type Session = {
   repeats?: number
   /** Approximate duration of each presentation, in minutes. */
   sessionMinutes?: number
+  url?: string
+  urlLabel?: string
+  companyLogo?: string
 }
 
 export const kindLabels: Record<SessionKind, string> = {
@@ -297,6 +314,7 @@ export const schedule: Session[] = [
       'Solventes eutéticos naturais profundos (NADES): tecnologias verdes para inovação e sustentabilidade em Química de Alimentos',
     speaker: 'Prof. Dr. Stanislau Bogusz Junior',
     affiliation: 'IQSC/USP — São Carlos',
+    photo: '/palestrantes/stanislau.jpeg',
   },
   {
     id: 's-almoco',
@@ -355,6 +373,7 @@ export const schedule: Session[] = [
     title: 'Fundamentos de eletrostática para tratamento de efluentes',
     speaker: 'Prof. Dr. Thiago A. Lima Burgo',
     affiliation: 'DQ/UNESP — Rio Preto',
+    photo: '/palestrantes/thiago-burgo.jpeg',
     repeats: 4,
     sessionMinutes: 20,
   },
@@ -419,6 +438,7 @@ export const schedule: Session[] = [
     title: 'Terapia gênica não viral: fundamentos e aplicações',
     speaker: 'Prof. Dr. Márcio Tiera',
     affiliation: 'DQ/UNESP — Rio Preto',
+    photo: '/palestrantes/marcio-jose-tiera.jpeg',
   },
   {
     id: 't-p6',
@@ -442,8 +462,15 @@ export const schedule: Session[] = [
     id: 't-e1',
     day: 'terca',
     time: '14:00',
-    kind: 'empresa',
-    title: 'Empresa 01 — programação a confirmar',
+    kind: 'palestra',
+    title:
+      'Química, eficiência e sustentabilidade: o papel da indústria química na redução do impacto ambiental',
+    speaker: 'Bruno Martins Brito',
+    affiliation: 'Gestor ambiental',
+    photo: '/palestrantes/Bruno-martins-brito.jpeg',
+    companyLogo: '/patrocinadores/diamond/mustang.jpg',
+    url: 'https://mustangpluron.com',
+    urlLabel: 'Mustang Pluron',
   },
   {
     id: 't-e2',
