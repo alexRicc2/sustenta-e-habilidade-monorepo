@@ -340,6 +340,7 @@ export const schedule: Session[] = [
     title:
       'Produção e aplicação do jogo “Emergência Climática” para conscientização sobre mudanças climáticas e ações sustentáveis',
     speaker: 'Prof. Dr. Alex Virgilio',
+    photo: '/palestrantes/alex-sustenta.jpeg',
     affiliation: 'CENA/USP — Piracicaba',
   },
   {
@@ -379,7 +380,7 @@ export const schedule: Session[] = [
     time: '16:00',
     endTime: '18:00',
     kind: 'minicurso',
-    title: 'Fundamentos de eletrostática para tratamento de efluentes',
+    title: 'Misturas Eutéticas na Química Analítica: Fundamentos, Diagramas de Fase e Ferramentas Computacionais',
     speaker: 'Prof. Dr. Thiago A. Lima Burgo',
     affiliation: 'DQ/UNESP — Rio Preto',
     photo: '/palestrantes/thiago-burgo.jpeg',
