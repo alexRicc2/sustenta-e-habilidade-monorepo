@@ -125,6 +125,7 @@ export const sponsorTiers: { name: string; sponsors: Sponsor[] }[] = [
       },
 
       { name: 'IBILCE', src: '/patrocinadores/bronze/ibilce.jpeg' },
+      { name: 'Pós-Graduação em Química UNESP', src: '/patrocinadores/bronze/pos-quimica.jpg' },
     ],
   },
   {
@@ -571,11 +572,13 @@ export const instagram = {
   ],
 } as const
 
-export type ComissaoTeam = 'GIQAV' | 'PET'
+export type ComissaoTeam = 'GIQAV' | 'PET' | 'Técnica' | 'Técnico'
 
 export const teamLogos: Record<ComissaoTeam, string> = {
   GIQAV: '/logos/Logo GIQAV.jpeg',
   PET: '/logos/pet-quimica.avif',
+  'Técnica': '/logos/settings.png',
+  'Técnico': '/logos/settings.png',
 }
 
 export const comissao = {
@@ -622,6 +625,24 @@ export const comissao = {
       role: 'Iniciação Científica',
       photo: '/comissao/henrique.jpg',
       team: 'GIQAV',
+    },
+    {
+      name: 'Nanci',
+      role: 'Técnica',
+      photo: '/comissao/nanci.jpeg',
+      team: 'Técnica',
+    },
+    {
+      name: 'Caio',
+      role: 'Técnico',
+      photo: '/comissao/caio.jpeg',
+      team: 'Técnico',
+    },
+    {
+      name: 'Glaucinei',
+      role: 'Técnico',
+      photo: '/comissao/glaucinei.jpeg',
+      team: 'Técnico',
     },
     {
       name: 'Gabriel',

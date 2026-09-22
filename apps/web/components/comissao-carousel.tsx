@@ -161,7 +161,7 @@ export function ComissaoCarousel() {
             ? `${index + 1} de ${people.length}`
             : `${index + 1}–${Math.min(index + perView, people.length)} de ${people.length}`}
         </p>
-        <div className="flex max-w-[min(100%,18rem)] gap-1.5 overflow-x-auto px-1">
+        <div className="flex max-w-[min(100%,22rem)] gap-1.5 overflow-x-auto px-1">
           {people.slice(0, maxIndex + 1).map((_, dot) => (
             <button
               key={dot}
