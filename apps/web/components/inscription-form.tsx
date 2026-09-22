@@ -150,6 +150,8 @@ function Spinner({ className }: { className?: string }) {
 }
 
 const acceptedFileTypes = "image/jpeg,image/png,image/webp,application/pdf"
+const maxTotalUploadBytes = 4 * 1024 * 1024
+const maxTotalUploadLabel = "4 MB"
 
 function isAcceptedFile(file: File) {
   return (
@@ -212,20 +214,35 @@ function FileDrop({
   label,
   hint,
   file,
+  maxBytes,
   onFile,
 }: {
   label: string
   hint?: string
   file: File | null
+  maxBytes: number
   onFile: (file: File | null) => void
 }) {
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
+  const [fileError, setFileError] = useState("")
   const previewUrl = file ? previewUrlFor(file) : null
 
   function assign(next: File | null) {
-    if (next && !isAcceptedFile(next)) return
+    if (next && !isAcceptedFile(next)) {
+      setFileError("Formato não aceito. Envie um arquivo JPG, PNG, WebP ou PDF.")
+      if (inputRef.current) inputRef.current.value = ""
+      return
+    }
+    if (next && next.size > maxBytes) {
+      setFileError(
+        `Esse arquivo tem ${formatFileSize(next.size)}. O limite total dos anexos é ${maxTotalUploadLabel}; neste campo ainda cabem ${formatFileSize(Math.max(0, maxBytes))}.`,
+      )
+      if (inputRef.current) inputRef.current.value = ""
+      return
+    }
+    setFileError("")
     onFile(next)
     if (!next && inputRef.current) inputRef.current.value = ""
   }
@@ -328,6 +345,12 @@ function FileDrop({
           {hint ? <p className="mt-3 text-xs text-white/50">{hint}</p> : null}
         </label>
       )}
+      <p className="mt-3 text-xs text-white/60">Limite total dos anexos: {maxTotalUploadLabel}.</p>
+      {fileError ? (
+        <p className="mt-2 text-sm font-semibold text-red-200" role="alert">
+          {fileError}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -385,6 +408,13 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
   async function submitPix() {
     if (!ticket || !comprovante || !form.preferenciaAlimentar) return
     if (ticketRequiresProof(ticket.id) && !comprovantePermanencia) return
+    const totalUploadBytes = comprovante.size + (comprovantePermanencia?.size ?? 0)
+    if (totalUploadBytes > maxTotalUploadBytes) {
+      setError(
+        `Os anexos somam ${formatFileSize(totalUploadBytes)}. Reduza os arquivos para no máximo ${maxTotalUploadLabel} no total.`,
+      )
+      return
+    }
     setSubmitting(true)
     setError("")
     try {
@@ -569,6 +599,7 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
                 label="Comprovante de permanência estudantil"
                 hint="Documento que comprove o vínculo com a permanência estudantil."
                 file={comprovantePermanencia}
+                maxBytes={maxTotalUploadBytes - (comprovante?.size ?? 0)}
                 onFile={setComprovantePermanencia}
               />
             ) : null}
@@ -622,6 +653,7 @@ export function InscriptionForm({ onSuccess }: { onSuccess?: () => void } = {}) 
                 label="Comprovante de pagamento"
                 hint={`Pague o valor exato de ${formatBRL(baseCents)} via Pix e anexe o comprovante.`}
                 file={comprovante}
+                maxBytes={maxTotalUploadBytes - (comprovantePermanencia?.size ?? 0)}
                 onFile={setComprovante}
               />
             </div>

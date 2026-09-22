@@ -285,6 +285,7 @@ export const schedule: Session[] = [
     speaker: 'Dra. Sara Cunha',
     affiliation: 'Universidade do Porto',
     remote: true,
+    photo: '/palestrantes/sara.jpeg',
   },
   {
     id: 's-c2',
