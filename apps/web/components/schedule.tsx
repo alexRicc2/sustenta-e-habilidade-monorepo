@@ -243,19 +243,40 @@ function DayBadge({ day }: { day: DayId }) {
   );
 }
 
+function formatHourLabel(time: string) {
+  const [hours, minutes] = time.split(":");
+  return minutes === "00" ? `${Number(hours)}h` : `${Number(hours)}h${minutes}`;
+}
+
 function parallelCopy(sessions: Session[]) {
   const first = sessions[0];
   const count = sessions.length;
-  const repeats = first.repeats;
-  const minutes = first.sessionMinutes;
   const range =
-    first.endTime != null ? `das ${first.time} às ${first.endTime}` : `a partir das ${first.time}`;
-
-  if (first.kind === "minicurso" && repeats && minutes) {
-    return `Os ${count} minicursos acontecem ao mesmo tempo, ${range}.`;
-  }
+    first.endTime != null
+      ? `das ${first.time} às ${first.endTime}`
+      : `a partir das ${first.time}`;
 
   return `${count} atividades simultâneas ${range}.`;
+}
+
+function MinicursoHowItWorks({ count, range }: { count: number; range: string }) {
+  return (
+    <div className="mt-3 space-y-3 rounded-2xl border border-sky/25 bg-forest-deep/40 p-4">
+      <div>
+        <p className="text-sm font-extrabold text-sky">🔄 Como funciona?</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-white/85">
+          Os {count} minicursos acontecem simultaneamente, {range}. Todos os participantes
+          participarão dos quatro minicursos, divididos em grupos que farão um rodízio entre as
+          atividades.
+        </p>
+      </div>
+      <p className="text-sm leading-relaxed text-white/85">
+        <span className="font-extrabold text-olive">⚠️ </span>
+        Não é necessário escolher ou realizar uma inscrição individual para os minicursos. A
+        organização fará a divisão dos grupos.
+      </p>
+    </div>
+  );
 }
 
 function parallelLabel(kind: SessionKind) {
@@ -287,6 +308,11 @@ function ParallelSessionCard({ sessions }: { sessions: Session[] }) {
   const first = sessions[0];
   const repeats = first.repeats;
   const minutes = first.sessionMinutes;
+  const isMinicurso = first.kind === "minicurso";
+  const range =
+    first.endTime != null
+      ? `das ${formatHourLabel(first.time)} às ${formatHourLabel(first.endTime)}`
+      : `a partir das ${formatHourLabel(first.time)}`;
 
   return (
     <li className="rounded-3xl bg-white/8 p-5">
@@ -298,11 +324,16 @@ function ParallelSessionCard({ sessions }: { sessions: Session[] }) {
               <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-olive">
                 {parallelLabel(first.kind)}
               </p>
-              
             </div>
             <DayBadge day={first.day} />
           </div>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-white/80">{parallelCopy(sessions)}</p>
+          {isMinicurso ? (
+            <MinicursoHowItWorks count={sessions.length} range={range} />
+          ) : (
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-white/80">
+              {parallelCopy(sessions)}
+            </p>
+          )}
         </div>
       </div>
 

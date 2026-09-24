@@ -100,7 +100,7 @@ export const organizers = [
 
 export type Sponsor = {
   name: string
-  src: string
+  src?: string
   url?: string
 }
 
@@ -118,36 +118,41 @@ export const sponsorTiers: { name: string; sponsors: Sponsor[] }[] = [
         src: '/patrocinadores/diamond/mustang.jpg',
         url: 'https://mustangpluron.com',
       },
-      { name: 'Merck',
+      {
+        name: 'Merck',
         src: '/patrocinadores/diamond/merck.png',
-        url: 'https://www.merckgroup.com/'
-
+        url: 'https://www.merckgroup.com/',
       },
-
       { name: 'IBILCE', src: '/patrocinadores/bronze/ibilce.jpeg' },
       { name: 'Pós-Graduação em Química UNESP', src: '/patrocinadores/bronze/pos-quimica.jpg' },
     ],
   },
   {
     name: 'Prata',
-    sponsors: [{ name: 'OxiTEM', src: '/patrocinadores/prata/Logo oxitem.jpeg' }, {
-      name: 'GIQAV', src: '/logos/Logo GIQAV.jpeg'
-    }],
+    sponsors: [
+      { name: 'PET QA', src: '/logos/pet-quimica.avif' },
+      { name: 'GIQAV', src: '/logos/Logo GIQAV.jpeg' },
+    ],
+  },
+  {
+    name: 'Bronze',
+    sponsors: [
+      { name: 'OxiTEM', src: '/patrocinadores/prata/Logo oxitem.jpeg' },
+      { name: 'VUNESP' , src: '/patrocinadores/bronze/vunesp.jpg'},
+      { name: 'Arco Íris', src: '/patrocinadores/bronze/arco-iris.jpg' },
+    ],
   },
   {
     name: 'Colaboradores',
     sponsors: [
-      { name: 'Arco Íris', src: '/patrocinadores/bronze/arco-iris.jpg' },
-     
       { name: 'DM Costura Criativa', src: '/patrocinadores/bronze/Logo DM costura criativa.jpeg' },
       { name: 'Nathália Risso', src: '/patrocinadores/bronze/Logo nathália risso.jpeg' },
       { name: 'Sistema CFQ/CRQs', src: '/patrocinadores/bronze/Logo sistema CFQ_CRQs.jpeg' },
       { name: 'Pós-Graduação em Química UNESP', src: '/patrocinadores/bronze/pos-quimica.jpg' },
-      {name: 'Brauni', src: '/patrocinadores/bronze/brauni.jpeg'},
-      {name: 'Laesd', src: '/patrocinadores/bronze/laesd.jpeg'},
-      {name: 'ufpr', src: '/patrocinadores/bronze/ufpr.jpeg'},
-      { name: 'CTCrom' , src: '/patrocinadores/bronze/CTCrom_Final.jpg'}
-
+      { name: 'Brauni', src: '/patrocinadores/bronze/brauni.jpeg' },
+      { name: 'Laesd', src: '/patrocinadores/bronze/laesd.jpeg' },
+      { name: 'ufpr', src: '/patrocinadores/bronze/ufpr.jpeg' },
+      { name: 'CTCrom', src: '/patrocinadores/bronze/CTCrom_Final.jpg' },
     ],
   },
 ]

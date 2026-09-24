@@ -28,7 +28,7 @@ export function Sponsors() {
                 {tier.sponsors.map((sponsor) => {
                   const cardClassName =
                     "flex h-28 flex-col items-center justify-center gap-1.5 rounded-2xl border border-forest/10 bg-paper px-5 py-4 shadow-sm shadow-forest/5 md:h-32";
-                  const logo = (
+                  const logo = sponsor.src ? (
                     <Image
                       src={publicSrc(sponsor.src)}
                       alt={sponsor.name}
@@ -36,13 +36,17 @@ export function Sponsors() {
                       height={96}
                       className={`max-w-full object-contain ${sponsor.url ? "max-h-16 md:max-h-20" : "max-h-20 md:max-h-24"}`}
                     />
+                  ) : (
+                    <span className="text-center font-display text-2xl leading-tight text-forest md:text-3xl">
+                      {sponsor.name}
+                    </span>
                   );
 
                   if (sponsor.url) {
                     const host = sponsor.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
                     return (
                       <a
-                        key={sponsor.src}
+                        key={sponsor.src ?? sponsor.name}
                         href={sponsor.url}
                         target="_blank"
                         rel="noreferrer"
@@ -58,7 +62,7 @@ export function Sponsors() {
                   }
 
                   return (
-                    <div key={sponsor.src} className={cardClassName}>
+                    <div key={sponsor.src ?? sponsor.name} className={cardClassName}>
                       {logo}
                     </div>
                   );
