@@ -71,6 +71,7 @@ export interface Config {
     media: Media;
     inscricoes: Inscricoe;
     qrcodes: Qrcode;
+    presencas: Presenca;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +83,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     inscricoes: InscricoesSelect<false> | InscricoesSelect<true>;
     qrcodes: QrcodesSelect<false> | QrcodesSelect<true>;
+    presencas: PresencasSelect<false> | PresencasSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -241,6 +243,43 @@ export interface Qrcode {
   createdAt: string;
 }
 /**
+ * Presenças lidas por intervalo do dia (antes/depois do coffee e depois do almoço). Use Ler QR Code para registrar.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "presencas".
+ */
+export interface Presenca {
+  id: string;
+  /**
+   * Momento do dia em que a pessoa retornou ao evento.
+   */
+  evento:
+    | 'd1-antes-coffee'
+    | 'd1-depois-coffee'
+    | 'd1-depois-almoco'
+    | 'd1-depois-coffee-tarde'
+    | 'd2-antes-coffee'
+    | 'd2-depois-coffee'
+    | 'd2-depois-almoco'
+    | 'd2-depois-coffee-tarde';
+  nome: string;
+  /**
+   * UUID impresso no crachá.
+   */
+  qrCodigo: string;
+  /**
+   * Inscrição paga vinculada a este QR Code.
+   */
+  inscricao?: (string | null) | Inscricoe;
+  lidoEm: string;
+  /**
+   * Notas manuais (ajuste, justificativa, etc.).
+   */
+  observacao?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -279,6 +318,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'qrcodes';
         value: string | Qrcode;
+      } | null)
+    | ({
+        relationTo: 'presencas';
+        value: string | Presenca;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -412,6 +455,20 @@ export interface QrcodesSelect<T extends boolean = true> {
   codigo?: T;
   status?: T;
   inscricao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "presencas_select".
+ */
+export interface PresencasSelect<T extends boolean = true> {
+  evento?: T;
+  nome?: T;
+  qrCodigo?: T;
+  inscricao?: T;
+  lidoEm?: T;
+  observacao?: T;
   updatedAt?: T;
   createdAt?: T;
 }

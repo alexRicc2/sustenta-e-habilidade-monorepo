@@ -1,6 +1,5 @@
 import { APIError, type Endpoint } from 'payload'
 import JSZip from 'jszip'
-import type { Inscricoe } from '@/payload-types'
 import {
   formatQrNumero,
   QRCODE_POOL_SIZE,
@@ -9,6 +8,7 @@ import {
   qrPngBuffer,
   seedQrcodes,
 } from '@/lib/qrcode'
+import { findParticipantePagoByQrCodigo } from '@/lib/presenca'
 
 export const lookupParticipanteEndpoint: Endpoint = {
   path: '/qr-participante/:codigo',
@@ -19,41 +19,16 @@ export const lookupParticipanteEndpoint: Endpoint = {
       throw new APIError('QR Code inválido.', 400)
     }
 
-    const found = await req.payload.find({
-      collection: 'qrcodes',
-      where: {
-        and: [{ codigo: { equals: codigo } }, { status: { equals: 'atribuido' } }],
-      },
-      depth: 1,
-      limit: 1,
-      overrideAccess: true,
-    })
-
-    const qr = found.docs[0]
-    let inscricao = qr?.inscricao
-
-    if (qr && inscricao && typeof inscricao === 'string') {
-      inscricao = await req.payload.findByID({
-        collection: 'inscricoes',
-        id: inscricao,
-        overrideAccess: true,
-      })
-    }
-
-    if (!qr || !inscricao || typeof inscricao === 'string') {
-      throw new APIError('Participante não cadastrado.', 404)
-    }
-
-    const participante = inscricao as Inscricoe
-    if (participante.statusPagamento !== 'pago') {
+    const participante = await findParticipantePagoByQrCodigo(req.payload, codigo, req)
+    if (!participante) {
       throw new APIError('Participante não cadastrado.', 404)
     }
 
     return Response.json({
       ok: true,
       participante: {
-        id: qr.codigo,
-        name: participante.nomeCompleto,
+        id: participante.qrCodigo,
+        name: participante.nome,
       },
     })
   },

@@ -138,7 +138,7 @@ export const sponsorTiers: { name: string; sponsors: Sponsor[] }[] = [
     name: 'Bronze',
     sponsors: [
       { name: 'OxiTEM', src: '/patrocinadores/prata/Logo oxitem.jpeg' },
-      { name: 'VUNESP' , src: '/patrocinadores/bronze/vunesp.jpg'},
+      { name: 'VUNESP' , src: '/patrocinadores/bronze/Vunesp.jpg'},
       { name: 'Arco Íris', src: '/patrocinadores/bronze/arco-iris.jpg' },
     ],
   },

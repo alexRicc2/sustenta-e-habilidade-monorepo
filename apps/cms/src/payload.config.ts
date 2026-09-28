@@ -12,6 +12,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Inscricoes } from './collections/Inscricoes'
 import { Qrcodes } from './collections/Qrcodes'
+import { Presencas } from './collections/Presencas'
 import { confirmarPagamentoEndpoint, submitInscricaoEndpoint } from './endpoints/inscricoes'
 import {
   downloadAllQrcodesEndpoint,
@@ -19,6 +20,7 @@ import {
   lookupParticipanteEndpoint,
   seedQrcodesEndpoint,
 } from './endpoints/qrcodes'
+import { registrarPresencaEndpoint } from './endpoints/presencas'
 import { assignQrToInscricaoData, seedQrcodes } from './lib/qrcode'
 
 const filename = fileURLToPath(import.meta.url)
@@ -50,9 +52,20 @@ export default buildConfig({
         Logo: '/graphics/Logo#Logo',
         Icon: '/graphics/Icon#Icon',
       },
+      afterNavLinks: ['/components/LerQrcodeNavLink#LerQrcodeNavLink'],
+      views: {
+        lerQrcode: {
+          Component: '/views/LerQrcode#LerQrcodeView',
+          path: '/ler-qrcode',
+          meta: {
+            title: 'Ler QR Code',
+            description: 'Leitura de presença por QR Code',
+          },
+        },
+      },
     },
   },
-  collections: [Users, Media, Inscricoes, Qrcodes],
+  collections: [Users, Media, Inscricoes, Qrcodes, Presencas],
   endpoints: [
     submitInscricaoEndpoint,
     confirmarPagamentoEndpoint,
@@ -60,6 +73,7 @@ export default buildConfig({
     folhaImpressaoEndpoint,
     seedQrcodesEndpoint,
     downloadAllQrcodesEndpoint,
+    registrarPresencaEndpoint,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
