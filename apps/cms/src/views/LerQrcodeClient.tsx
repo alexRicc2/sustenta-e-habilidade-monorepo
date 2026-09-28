@@ -19,6 +19,12 @@ type JsQRFn = (
   options?: { inversionAttempts?: 'dontInvert' | 'onlyInvert' | 'attemptBoth' | 'invertFirst' },
 ) => { data: string } | null
 
+type ScanStatus =
+  | { kind: 'ready' }
+  | { kind: 'loading'; nome?: string }
+  | { kind: 'success'; message: string }
+  | { kind: 'error'; message: string }
+
 declare global {
   interface Window {
     jsQR?: JsQRFn
@@ -60,10 +66,11 @@ function loadJsQR(): Promise<JsQRFn> {
   return jsQRPromise
 }
 
-/** Short two-tone chime after a successful QR read. */
 function playCompleteSound() {
   try {
-    const AudioCtx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    const AudioCtx =
+      window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AudioCtx) return
     const ctx = new AudioCtx()
     const now = ctx.currentTime
@@ -89,22 +96,40 @@ function playCompleteSound() {
       void ctx.close()
     }, 500)
   } catch {
-    // ignore audio errors (autoplay policies, etc.)
+    // ignore
   }
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        border: '3px solid rgba(255,255,255,0.35)',
+        borderTopColor: '#fff',
+        display: 'inline-block',
+        animation: 'presenca-spin 0.7s linear infinite',
+      }}
+    />
+  )
 }
 
 export function LerQrcodeClient() {
   const [evento, setEvento] = useState<PresencaEvento>('d1-antes-coffee')
   const [scanning, setScanning] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState<ScanStatus>({ kind: 'ready' })
   const [manualCodigo, setManualCodigo] = useState('')
-  const [lastMessage, setLastMessage] = useState<string | null>(null)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number | null>(null)
   const jsQRRef = useRef<JsQRFn | null>(null)
+  const statusResetRef = useRef<number | null>(null)
   const eventoRef = useRef(evento)
   const busyRef = useRef(false)
   const lastCodeRef = useRef<{ codigo: string; at: number } | null>(null)
@@ -113,7 +138,29 @@ export function LerQrcodeClient() {
     eventoRef.current = evento
   }, [evento])
 
+  const clearStatusReset = useCallback(() => {
+    if (statusResetRef.current !== null) {
+      window.clearTimeout(statusResetRef.current)
+      statusResetRef.current = null
+    }
+  }, [])
+
+  const releaseCameraSoon = useCallback(
+    (next: ScanStatus, delayMs = 1600) => {
+      clearStatusReset()
+      setStatus(next)
+      statusResetRef.current = window.setTimeout(() => {
+        busyRef.current = false
+        setBusy(false)
+        setStatus({ kind: 'ready' })
+        statusResetRef.current = null
+      }, delayMs)
+    },
+    [clearStatusReset],
+  )
+
   const stopScanner = useCallback(() => {
+    clearStatusReset()
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current)
       rafRef.current = null
@@ -127,78 +174,80 @@ export function LerQrcodeClient() {
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
+    busyRef.current = false
+    setBusy(false)
+    setStatus({ kind: 'ready' })
     setScanning(false)
-  }, [])
+  }, [clearStatusReset])
 
-  const registerPresenca = useCallback(async (codigoRaw: string) => {
-    const codigo = String(codigoRaw || '').trim().toLowerCase()
-    if (!codigo || busyRef.current) return
+  const registerPresenca = useCallback(
+    async (codigoRaw: string) => {
+      const codigo = String(codigoRaw || '').trim().toLowerCase()
+      if (!codigo || busyRef.current) return
 
-    const now = Date.now()
-    if (
-      lastCodeRef.current &&
-      lastCodeRef.current.codigo === codigo &&
-      now - lastCodeRef.current.at < 4000
-    ) {
-      return
-    }
-    lastCodeRef.current = { codigo, at: now }
-    busyRef.current = true
-    setBusy(true)
-
-    try {
-      const response = await fetch('/api/presencas-checkin', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigo, evento: eventoRef.current }),
-      })
-      const data = (await response.json()) as CheckinResponse
-      if (!response.ok) {
-        throw new Error(data.errors?.[0]?.message || data.message || 'Falha ao registrar presença.')
+      const now = Date.now()
+      if (
+        lastCodeRef.current &&
+        lastCodeRef.current.codigo === codigo &&
+        now - lastCodeRef.current.at < 4000
+      ) {
+        return
       }
+      lastCodeRef.current = { codigo, at: now }
+      busyRef.current = true
+      setBusy(true)
+      setStatus({ kind: 'loading' })
 
-      const message = data.message || 'Presença registrada.'
-      setLastMessage(message)
-      playCompleteSound()
-      if (data.alreadyRegistered) {
-        toast.info(message)
-      } else {
-        toast.success(message)
+      try {
+        const response = await fetch('/api/presencas-checkin', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo, evento: eventoRef.current }),
+        })
+        const data = (await response.json()) as CheckinResponse
+        if (!response.ok) {
+          throw new Error(data.errors?.[0]?.message || data.message || 'Falha ao registrar presença.')
+        }
+
+        const message = data.message || 'Presença registrada.'
+        playCompleteSound()
+        if (data.alreadyRegistered) {
+          toast.info(message)
+        } else {
+          toast.success(message)
+        }
+        releaseCameraSoon({ kind: 'success', message }, 1800)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Falha ao registrar presença.'
+        toast.error(message)
+        releaseCameraSoon({ kind: 'error', message }, 2200)
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Falha ao registrar presença.'
-      setLastMessage(message)
-      toast.error(message)
-    } finally {
-      busyRef.current = false
-      setBusy(false)
-    }
-  }, [])
+    },
+    [releaseCameraSoon],
+  )
 
   const scanLoop = useCallback(() => {
     const video = videoRef.current
     const canvas = canvasRef.current
     const decode = jsQRRef.current
-    if (!video || !canvas || !decode || video.readyState < 2) {
-      rafRef.current = requestAnimationFrame(scanLoop)
-      return
-    }
 
-    const width = video.videoWidth
-    const height = video.videoHeight
-    if (width && height) {
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d', { willReadFrequently: true })
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, width, height)
-        const imageData = ctx.getImageData(0, 0, width, height)
-        const code = decode(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
-        })
-        if (code?.data) {
-          void registerPresenca(code.data)
+    if (!busyRef.current && video && canvas && decode && video.readyState >= 2) {
+      const width = video.videoWidth
+      const height = video.videoHeight
+      if (width && height) {
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, width, height)
+          const imageData = ctx.getImageData(0, 0, width, height)
+          const code = decode(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert',
+          })
+          if (code?.data) {
+            void registerPresenca(code.data)
+          }
         }
       }
     }
@@ -229,6 +278,7 @@ export function LerQrcodeClient() {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
       }
+      setStatus({ kind: 'ready' })
       setScanning(true)
       rafRef.current = requestAnimationFrame(scanLoop)
     } catch (error) {
@@ -247,8 +297,45 @@ export function LerQrcodeClient() {
     }
   }, [stopScanner])
 
+  const overlay =
+    !scanning
+      ? null
+      : status.kind === 'loading'
+        ? {
+            mode: 'full' as const,
+            bg: 'rgba(18, 51, 38, 0.82)',
+            title: 'Registrando presença…',
+            body: 'Aguarde um instante.',
+            spinner: true,
+          }
+        : status.kind === 'success'
+          ? {
+              mode: 'full' as const,
+              bg: 'rgba(28, 110, 58, 0.88)',
+              title: 'Presença registrada',
+              body: status.message,
+              spinner: false,
+            }
+          : status.kind === 'error'
+            ? {
+                mode: 'full' as const,
+                bg: 'rgba(140, 35, 35, 0.88)',
+                title: 'Não foi possível registrar',
+                body: status.message,
+                spinner: false,
+              }
+            : {
+                mode: 'banner' as const,
+                bg: 'rgba(0, 0, 0, 0.62)',
+                title: 'Pronto para ler',
+                body: 'Aponte o QR Code do crachá para a câmera.',
+                spinner: false,
+              }
+
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', paddingBottom: 40 }}>
+      <style>{`@keyframes presenca-spin { to { transform: rotate(360deg); } }`}</style>
+
       <h1 style={{ margin: '0 0 8px', fontSize: 28 }}>Ler QR Code</h1>
       <p style={{ margin: '0 0 20px', color: 'var(--theme-elevation-600)', lineHeight: 1.45 }}>
         Selecione o intervalo do dia e aponte a câmera para o crachá quando a pessoa retornar.
@@ -268,6 +355,7 @@ export function LerQrcodeClient() {
       </label>
       <select
         value={evento}
+        disabled={busy}
         onChange={(event) => setEvento(event.target.value as PresencaEvento)}
         style={{
           width: '100%',
@@ -309,6 +397,7 @@ export function LerQrcodeClient() {
           <button
             type="button"
             onClick={stopScanner}
+            disabled={busy && status.kind === 'loading'}
             style={{
               background: 'var(--theme-error-500)',
               color: '#fff',
@@ -317,6 +406,7 @@ export function LerQrcodeClient() {
               padding: '10px 16px',
               fontWeight: 600,
               cursor: 'pointer',
+              opacity: busy && status.kind === 'loading' ? 0.7 : 1,
             }}
           >
             Parar câmera
@@ -355,9 +445,109 @@ export function LerQrcodeClient() {
           ref={videoRef}
           muted
           playsInline
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            filter: status.kind === 'loading' ? 'brightness(0.55)' : undefined,
+          }}
         />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        {overlay ? (
+          <div
+            role="status"
+            aria-live="polite"
+            style={
+              overlay.mode === 'banner'
+                ? {
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                    padding: '14px 16px',
+                    textAlign: 'center',
+                    background: overlay.bg,
+                    color: '#fff',
+                    pointerEvents: 'none',
+                  }
+                : {
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 12,
+                    padding: 24,
+                    textAlign: 'center',
+                    background: overlay.bg,
+                    color: '#fff',
+                  }
+            }
+          >
+            {overlay.spinner ? <Spinner /> : null}
+            {!overlay.spinner && status.kind === 'success' ? (
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: 24,
+                  fontWeight: 700,
+                }}
+              >
+                ✓
+              </div>
+            ) : null}
+            {!overlay.spinner && status.kind === 'error' ? (
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: 24,
+                  fontWeight: 700,
+                }}
+              >
+                !
+              </div>
+            ) : null}
+            <div
+              style={{
+                fontSize: overlay.mode === 'banner' ? 14 : 20,
+                fontWeight: 800,
+                lineHeight: 1.2,
+              }}
+            >
+              {overlay.title}
+            </div>
+            <div
+              style={{
+                fontSize: overlay.mode === 'banner' ? 12 : 14,
+                lineHeight: 1.4,
+                maxWidth: 320,
+                opacity: 0.95,
+              }}
+            >
+              {overlay.body}
+            </div>
+            {status.kind === 'success' || status.kind === 'error' ? (
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                Liberando câmera para a próxima leitura…
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <form
@@ -372,6 +562,7 @@ export function LerQrcodeClient() {
           value={manualCodigo}
           onChange={(event) => setManualCodigo(event.target.value)}
           placeholder="Cole o UUID do QR (fallback)"
+          disabled={busy}
           style={{
             flex: '1 1 240px',
             padding: '10px 12px',
@@ -398,15 +589,6 @@ export function LerQrcodeClient() {
           Registrar
         </button>
       </form>
-
-      {busy ? (
-        <p style={{ marginTop: 12, color: 'var(--theme-elevation-600)' }}>Registrando presença...</p>
-      ) : null}
-      {lastMessage ? (
-        <p style={{ marginTop: 12, color: 'var(--theme-elevation-800)', fontWeight: 600 }}>
-          {lastMessage}
-        </p>
-      ) : null}
     </div>
   )
 }
