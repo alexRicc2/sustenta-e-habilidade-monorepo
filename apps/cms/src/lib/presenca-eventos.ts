@@ -1,12 +1,8 @@
 export const PRESENCA_EVENTO_OPTIONS = [
-  { label: 'Dia 1 — Antes do coffee', value: 'd1-antes-coffee' },
-  { label: 'Dia 1 — Depois do coffee', value: 'd1-depois-coffee' },
-  { label: 'Dia 1 — Depois do almoço', value: 'd1-depois-almoco' },
-  { label: 'Dia 1 — Depois do coffee (tarde)', value: 'd1-depois-coffee-tarde' },
-  { label: 'Dia 2 — Antes do coffee', value: 'd2-antes-coffee' },
-  { label: 'Dia 2 — Depois do coffee', value: 'd2-depois-coffee' },
-  { label: 'Dia 2 — Depois do almoço', value: 'd2-depois-almoco' },
-  { label: 'Dia 2 — Depois do coffee (tarde)', value: 'd2-depois-coffee-tarde' },
+  { label: 'Dia 1 — Manhã', value: 'd1-manha' },
+  { label: 'Dia 1 — Tarde', value: 'd1-tarde' },
+  { label: 'Dia 2 — Manhã', value: 'd2-manha' },
+  { label: 'Dia 2 — Tarde', value: 'd2-tarde' },
 ] as const
 
 export type PresencaEvento = (typeof PRESENCA_EVENTO_OPTIONS)[number]['value']

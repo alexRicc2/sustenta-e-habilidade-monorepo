@@ -1,13 +1,22 @@
-import { APIError, type Endpoint } from 'payload'
+import { APIError, type Endpoint, type PayloadRequest } from 'payload'
 import { QRCODE_UUID_REGEX } from '@/lib/qrcode'
 import { isPresencaEvento, labelPresencaEvento } from '@/lib/presenca-eventos'
 import { findParticipantePagoByQrCodigo } from '@/lib/presenca'
+
+/** Admin session cookie OR dedicated app secret (never reuse payment INTERNAL_SECRET). */
+function authorizePresencaRequest(req: PayloadRequest): boolean {
+  if (req.user) return true
+
+  const secret = req.headers.get('x-presenca-app-secret')
+  const expected = (process.env.PRESENCA_APP_SECRET || '').trim()
+  return Boolean(expected && secret && secret === expected)
+}
 
 export const registrarPresencaEndpoint: Endpoint = {
   path: '/presencas-checkin',
   method: 'post',
   handler: async (req) => {
-    if (!req.user) {
+    if (!authorizePresencaRequest(req)) {
       throw new APIError('Unauthorized', 401)
     }
 
@@ -79,6 +88,45 @@ export const registrarPresencaEndpoint: Endpoint = {
         id: participante.qrCodigo,
         name: participante.nome,
       },
+    })
+  },
+}
+
+export const listarPresencasEndpoint: Endpoint = {
+  path: '/presencas-lista',
+  method: 'get',
+  handler: async (req) => {
+    if (!authorizePresencaRequest(req)) {
+      throw new APIError('Unauthorized', 401)
+    }
+
+    const url = new URL(req.url || '', 'http://localhost')
+    const evento = String(url.searchParams.get('evento') || '').trim()
+
+    if (!isPresencaEvento(evento)) {
+      throw new APIError('Intervalo de presença inválido.', 400)
+    }
+
+    const found = await req.payload.find({
+      collection: 'presencas',
+      where: { evento: { equals: evento } },
+      sort: '-lidoEm',
+      limit: 500,
+      depth: 0,
+      overrideAccess: true,
+      req,
+    })
+
+    return Response.json({
+      ok: true,
+      totalDocs: found.totalDocs,
+      docs: found.docs.map((doc) => ({
+        id: String(doc.id),
+        nome: doc.nome,
+        qrCodigo: doc.qrCodigo,
+        evento: doc.evento,
+        lidoEm: doc.lidoEm,
+      })),
     })
   },
 }

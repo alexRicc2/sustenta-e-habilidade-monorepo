@@ -243,7 +243,7 @@ export interface Qrcode {
   createdAt: string;
 }
 /**
- * Presenças lidas por intervalo do dia (antes/depois do coffee e depois do almoço). Use Ler QR Code para registrar.
+ * Presenças lidas por período do dia (manhã e tarde). Use Ler QR Code para registrar.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "presencas".
@@ -251,17 +251,9 @@ export interface Qrcode {
 export interface Presenca {
   id: string;
   /**
-   * Momento do dia em que a pessoa retornou ao evento.
+   * Período do dia em que a presença foi registrada.
    */
-  evento:
-    | 'd1-antes-coffee'
-    | 'd1-depois-coffee'
-    | 'd1-depois-almoco'
-    | 'd1-depois-coffee-tarde'
-    | 'd2-antes-coffee'
-    | 'd2-depois-coffee'
-    | 'd2-depois-almoco'
-    | 'd2-depois-coffee-tarde';
+  evento: 'd1-manha' | 'd1-tarde' | 'd2-manha' | 'd2-tarde';
   nome: string;
   /**
    * UUID impresso no crachá.

@@ -12,7 +12,7 @@ export const Presencas: CollectionConfig = {
     defaultColumns: ['nome', 'evento', 'qrCodigo', 'lidoEm', 'updatedAt'],
     group: 'Evento',
     description:
-      'Presenças lidas por intervalo do dia (antes/depois do coffee e depois do almoço). Use Ler QR Code para registrar.',
+      'Presenças lidas por período do dia (manhã e tarde). Use Ler QR Code para registrar.',
     listSearchableFields: ['nome', 'qrCodigo'],
     components: {
       beforeListTable: ['/components/PresencasListHeader#PresencasListHeader'],
@@ -41,7 +41,7 @@ export const Presencas: CollectionConfig = {
       label: 'Intervalo',
       options: [...PRESENCA_EVENTO_OPTIONS],
       admin: {
-        description: 'Momento do dia em que a pessoa retornou ao evento.',
+        description: 'Período do dia em que a presença foi registrada.',
       },
     },
     {

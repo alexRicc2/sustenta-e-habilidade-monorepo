@@ -20,7 +20,7 @@ import {
   lookupParticipanteEndpoint,
   seedQrcodesEndpoint,
 } from './endpoints/qrcodes'
-import { registrarPresencaEndpoint } from './endpoints/presencas'
+import { listarPresencasEndpoint, registrarPresencaEndpoint } from './endpoints/presencas'
 import { assignQrToInscricaoData, seedQrcodes } from './lib/qrcode'
 
 const filename = fileURLToPath(import.meta.url)
@@ -74,6 +74,7 @@ export default buildConfig({
     seedQrcodesEndpoint,
     downloadAllQrcodesEndpoint,
     registrarPresencaEndpoint,
+    listarPresencasEndpoint,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

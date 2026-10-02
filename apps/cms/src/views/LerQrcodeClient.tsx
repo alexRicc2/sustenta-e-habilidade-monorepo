@@ -118,7 +118,7 @@ function Spinner() {
 }
 
 export function LerQrcodeClient() {
-  const [evento, setEvento] = useState<PresencaEvento>('d1-antes-coffee')
+  const [evento, setEvento] = useState<PresencaEvento>('d1-manha')
   const [scanning, setScanning] = useState(false)
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<ScanStatus>({ kind: 'ready' })
