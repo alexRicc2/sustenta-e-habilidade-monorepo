@@ -20,7 +20,7 @@ export const event = {
 export const siteSeo = {
   title: 'II Sustenta & Habilidade — 2026',
   description:
-    'Inscreva-se no II Sustenta & Habilidade: ações e inovações em Química na busca dos ODS. 05 e 06 de outubro de 2026, Auditório A, UNESP/IBILCE. Vagas abertas com pagamento via Pix.',
+    'II Sustenta & Habilidade: ações e inovações em Química na busca dos ODS. 05 e 06 de outubro de 2026, Auditório A, UNESP/IBILCE.',
 } as const
 
 export const coordination = [
@@ -728,6 +728,5 @@ export const navItems = [
   { id: 'programacao', label: 'Programação' },
   { id: 'patrocinadores', label: 'Patrocinadores' },
   { id: 'organizacao', label: 'Organização' },
-  { id: 'inscricao', label: 'Inscrição' },
   { id: 'instagram', label: 'Instagram' },
 ] as const

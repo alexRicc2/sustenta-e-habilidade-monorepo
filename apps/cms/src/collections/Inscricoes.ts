@@ -86,7 +86,7 @@ export const Inscricoes: CollectionConfig = {
     ],
   },
   access: {
-    create: () => true,
+    create: ({ req: { user } }) => Boolean(user),
     read: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => Boolean(user),
     delete: ({ req: { user } }) => Boolean(user),

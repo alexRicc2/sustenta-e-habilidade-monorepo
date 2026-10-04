@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { navItems } from "@/lib/event";
 
 type NavTone = "light" | "dark" | "black";
 
-const darkSectionIds = new Set(["programacao", "inscricao"]);
+const darkSectionIds = new Set(["programacao"]);
 
 function toneForSection(id: string): NavTone {
   if (id === "inicio") return "black";
@@ -182,16 +181,5 @@ export function SideNav() {
         ))}
       </ul>
     </nav>
-  );
-}
-
-export function HeaderCta() {
-  return (
-    <Link
-      href="/inscricoes"
-      className="fixed right-4 top-4 z-50 rounded-full bg-olive px-5 py-2.5 text-sm font-extrabold uppercase tracking-[0.16em] text-white shadow-lg shadow-forest/20 transition hover:bg-leaf md:right-8 md:top-6"
-    >
-      Inscreva-se
-    </Link>
   );
 }

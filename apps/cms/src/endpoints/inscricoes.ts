@@ -1,4 +1,4 @@
-import { addDataAndFileToRequest, APIError, type Endpoint, type Payload, type PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, APIError, type Endpoint, type PayloadRequest } from 'payload'
 import type { Inscricoe } from '@/payload-types'
 import { needsManualApproval } from '@/lib/inscricao'
 import { getInscricaoWithQr } from '@/lib/qrcode'
@@ -29,89 +29,11 @@ async function readJsonBody(req: PayloadRequest) {
   return (req.data || {}) as InscricaoInput
 }
 
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, '')
-}
-
-async function createInscricao(payload: Payload, data: InscricaoInput) {
-  return payload.create({
-    collection: 'inscricoes',
-    data: {
-      nomeCompleto: data.nomeCompleto,
-      email: data.email,
-      cpf: onlyDigits(data.cpf),
-      telefone: onlyDigits(data.telefone) || data.telefone,
-      instituicao: data.instituicao || '',
-      ra: data.ra || '',
-      isUnesp: data.isUnesp === true || data.isUnesp === 'true',
-      preferenciaAlimentar: data.preferenciaAlimentar,
-      categoria: data.categoria,
-      metodoPagamento: data.metodoPagamento,
-      valorCentavos: Number(data.valorCentavos),
-      statusPagamento: 'pendente',
-      ...(data.comprovanteId ? { comprovante: data.comprovanteId } : {}),
-      ...(data.comprovantePermanenciaId ? { comprovantePermanencia: data.comprovantePermanenciaId } : {}),
-      ...(data.stripeSessionId ? { stripeSessionId: data.stripeSessionId } : {}),
-      ...(data.mercadoPagoPaymentId ? { mercadoPagoPaymentId: data.mercadoPagoPaymentId } : {}),
-    },
-    overrideAccess: true,
-  })
-}
-
 export const submitInscricaoEndpoint: Endpoint = {
   path: '/submit-inscricao',
   method: 'post',
-  handler: async (req) => {
-    const data = await readJsonBody(req)
-    const required: (keyof InscricaoInput)[] = [
-      'nomeCompleto',
-      'email',
-      'cpf',
-      'telefone',
-      'preferenciaAlimentar',
-      'categoria',
-      'metodoPagamento',
-      'valorCentavos',
-    ]
-    for (const field of required) {
-      if (data[field] === undefined || data[field] === '') {
-        throw new APIError(`Campo obrigatório: ${field}`, 400)
-      }
-    }
-
-    const comprovanteId =
-      data.comprovanteId || (data as InscricaoInput & { comprovante?: string }).comprovante
-    const comprovantePermanenciaId =
-      data.comprovantePermanenciaId ||
-      (data as InscricaoInput & { comprovantePermanencia?: string }).comprovantePermanencia
-
-    if (
-      data.preferenciaAlimentar !== 'onivoro' &&
-      data.preferenciaAlimentar !== 'vegano' &&
-      data.preferenciaAlimentar !== 'vegetariano'
-    ) {
-      throw new APIError('Selecione uma preferência alimentar válida.', 400)
-    }
-
-    if (data.metodoPagamento === 'pix' && !comprovanteId) {
-      throw new APIError('Anexe o comprovante de pagamento PIX.', 400)
-    }
-
-    if (data.categoria === 'permanencia-estudantil' && !comprovantePermanenciaId) {
-      throw new APIError('Anexe o comprovante de permanência estudantil.', 400)
-    }
-
-    const doc = (await createInscricao(req.payload, {
-      ...data,
-      comprovanteId,
-      comprovantePermanenciaId,
-    })) as Inscricoe
-
-    if (needsManualApproval(data.categoria, data.metodoPagamento)) {
-      await sendInscricaoEmailSafe(req.payload, doc, 'aguardando-aprovacao')
-    }
-
-    return Response.json({ ok: true, doc })
+  handler: async () => {
+    throw new APIError('As inscrições estão encerradas.', 403)
   },
 }
 
