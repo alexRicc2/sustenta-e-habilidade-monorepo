@@ -7,7 +7,7 @@ import { Sponsors } from "@/components/sponsors";
 import { Organizers } from "@/components/organizers";
 import { Instagram } from "@/components/instagram";
 import { Footer } from "@/components/footer";
-
+// trigger
 export default function Home() {
   return (
     <>

@@ -247,6 +247,7 @@ export interface Qrcode {
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "presencas".
+ * trigger
  */
 export interface Presenca {
   id: string;
